@@ -1,20 +1,75 @@
 const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
 const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-const useCompressedContent = true;
-const contentPath = useCompressedContent
-  ? "./content/optimized/"
-  : "./content/originals/";
+const contentPath = "./content/optimized/";
+const mobileBreakpoint = 768;
+
+// Store current project name for scroll restoration
+const projectMatch = location.pathname.match(/\/([^/]+)\.html/);
+if (projectMatch) {
+  sessionStorage.setItem("lastProject", projectMatch[1]);
+}
+
+// Calculate fullscreen scale for home page
+function setFullscreenScale() {
+  if (!document.getElementById("home")) return;
+  const isMobile = window.innerWidth <= mobileBreakpoint;
+
+  if (isMobile) {
+    // Mobile/tablet: No scaling needed, natural video height
+    document.documentElement.style.setProperty("--cover-scale", 1);
+    document.documentElement.style.setProperty("--contain-scale", 1);
+  } else {
+    // Desktop: 16:9 scaling
+    const contentHeight = window.innerWidth * 9 / 16;
+    const scaleY = window.innerHeight / contentHeight;
+    document.documentElement.style.setProperty("--cover-scale", Math.max(1, scaleY));
+    document.documentElement.style.setProperty("--contain-scale", Math.min(1, scaleY));
+  }
+}
+
+// Restore scroll position when navigating back to home
+let hasScrolled = false;
+function scrollToLastProject() {
+  if (hasScrolled) return;
+  if (!document.getElementById("home")) return;
+
+  const projectName = sessionStorage.getItem("lastProject");
+  if (!projectName) return;
+
+  const target = document.querySelector(`[style*="view-transition-name: ${projectName}"]`);
+  if (target) {
+    hasScrolled = true;
+    const html = document.documentElement;
+    html.style.scrollSnapType = "none";
+    target.scrollIntoView({ behavior: "instant", block: "start" });
+    requestAnimationFrame(() => {
+      html.style.scrollSnapType = "";
+    });
+  }
+}
+
+window.addEventListener("pagereveal", (e) => {
+  if (e.viewTransition) {
+    setFullscreenScale();
+    scrollToLastProject();
+  }
+});
+
+window.addEventListener("pageshow", (e) => {
+  if (e.persisted) scrollToLastProject();
+});
+
+document.addEventListener("DOMContentLoaded", scrollToLastProject);
 
 document.addEventListener("DOMContentLoaded", () => {
   const videos = document.querySelectorAll(".video");
   const sections = document.querySelectorAll("section");
 
+  setFullscreenScale();
+  window.addEventListener("resize", setFullscreenScale);
+
   let activeTitle = null;
   let pendingTimeouts = new Map();
-
-  if ("scrollRestoration" in history) {
-    history.scrollRestoration = "auto";
-  }
 
   (function () {
     const identityEl = document.getElementById("identity");
@@ -138,30 +193,32 @@ document.addEventListener("DOMContentLoaded", () => {
     }, START_DELAY);
   })();
 
-  sections.forEach((section) => {
-    const title = section.querySelector(".title");
+  if (window.innerWidth > mobileBreakpoint) {
+    sections.forEach((section) => {
+      const title = section.querySelector(".title");
 
-    section.addEventListener("mouseenter", (e) => {
-      if (activeTitle && activeTitle !== title) {
-        activeTitle.style.opacity = 0;
-      }
-      activeTitle = title;
-      title.style.opacity = 1;
-      title.style.left = e.clientX + "px";
-      title.style.top = e.clientY + "px";
-    });
+      section.addEventListener("mouseenter", (e) => {
+        if (activeTitle && activeTitle !== title) {
+          activeTitle.style.opacity = 0;
+        }
+        activeTitle = title;
+        title.style.opacity = 1;
+        title.style.left = e.clientX + "px";
+        title.style.top = e.clientY + "px";
+      });
 
-    section.addEventListener("mouseleave", () => {
-      title.style.opacity = 0;
-      if (activeTitle === title) activeTitle = null;
-    });
+      section.addEventListener("mouseleave", () => {
+        title.style.opacity = 0;
+        if (activeTitle === title) activeTitle = null;
+      });
 
-    section.addEventListener("mousemove", (e) => {
-      if (!activeTitle) return;
-      activeTitle.style.left = e.clientX + "px";
-      activeTitle.style.top = e.clientY + "px";
+      section.addEventListener("mousemove", (e) => {
+        if (!activeTitle) return;
+        activeTitle.style.left = e.clientX + "px";
+        activeTitle.style.top = e.clientY + "px";
+      });
     });
-  });
+  }
 
   const videoObserver = new IntersectionObserver(
     (entries) => {
@@ -190,7 +247,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             video.addEventListener("playing", () => {
               video.style.opacity = "1";
-              if (window.innerWidth > 500) {
+              if (window.innerWidth > mobileBreakpoint) {
                 setTimeout(() => (img.style.opacity = "0"), 300);
               }
             });
@@ -198,7 +255,7 @@ document.addEventListener("DOMContentLoaded", () => {
             target.appendChild(video);
           };
 
-          if (window.innerWidth <= 500) {
+          if (window.innerWidth <= mobileBreakpoint) {
             const timeout = setTimeout(loadVideo, 200);
             pendingTimeouts.set(target, timeout);
           } else {
@@ -217,19 +274,19 @@ document.addEventListener("DOMContentLoaded", () => {
             }, 300);
 
             existingVideo.style.opacity = "0";
-            if (window.innerWidth > 500) {
+            if (window.innerWidth > mobileBreakpoint) {
               img.style.opacity = "1";
             }
           }
         }
       });
     },
-    { threshold: 0.2 }
+    { threshold: 0.5 }
   );
 
   function getVideoSource(video, dataset) {
     const src =
-      window.innerWidth <= 500 && dataset.srcMobile
+      window.innerWidth <= mobileBreakpoint && dataset.srcMobile
         ? dataset.srcMobile
         : dataset.src;
 
@@ -246,14 +303,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const format = Object.keys(formats).find(
       (format) => video.canPlayType(format) !== ""
     );
-    const suffix = useCompressedContent ? formats[format] : ".mp4";
+    const suffix = formats[format];
 
     return contentPath + src + suffix;
   }
 
   videos.forEach((video) => {
     const src =
-      window.innerWidth <= 500 && video.dataset.srcMobile
+      window.innerWidth <= mobileBreakpoint && video.dataset.srcMobile
         ? video.dataset.srcMobile
         : video.dataset.src;
     video.querySelector("img").src = contentPath + src + "-poster.webp";

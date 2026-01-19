@@ -1,93 +1,17 @@
 ::view-transition-group(*) {
-  animation-duration: 200ms;
-  animation-timing-function: cubic-bezier(.8,.05,.24,.91);
+  animation-duration: 0.6s;
+  animation-timing-function: cubic-bezier(1,0,0,1);
 }
 
-::view-transition-group(root) {
-  animation-name: slide-in;
-}
-
-#page::view-transition-old(rain),
-#page::view-transition-old(eight-sleep),
-#page::view-transition-old(bocci),
-#page::view-transition-old(specter) {
-  animation-name: home-page-old;
-  border-radius: 12px;
-  corner-shape: superellipse(1.5);
-  overflow: hidden;
-  object-fit: cover;
-}
-
-#page::view-transition-new(rain),
-#page::view-transition-new(eight-sleep),
-#page::view-transition-new(bocci), 
-#page::view-transition-new(specter) {
-  animation-name: home-page-new;
-  border-radius: 12px;
-  corner-shape: superellipse(1.5);
-  overflow: hidden;
-  object-fit: cover;
-}
-
-#home::view-transition-old(rain),
-#home::view-transition-old(eight-sleep), 
-#home::view-transition-old(bocci),
-#home::view-transition-old(specter) {
-  animation-name: home-page-old;
-  animation-direction: reverse;
-  border-radius: 0px;
-  corner-shape: superellipse(1.5);
-  overflow: hidden;
-  object-fit: cover;
-}
-
-#home::view-transition-new(rain),
-#home::view-transition-new(eight-sleep),
-#home::view-transition-new(bocci),
-#home::view-transition-new(specter) {
-  animation-name: home-page-new;
-  animation-direction: reverse;
-  border-radius: 0px;
-  corner-shape: superellipse(1.5);
-  overflow: hidden;
-  object-fit: cover;
-}
-
-@keyframes home-page-old {
-  0% {
-    height: 100vh;
-    opacity: 1;
-  }
-  50% {
-    opacity: 0;
-  }
-  100% {
-    height: calc(100vw * 9 / 16);
-  }
-}
-
-@keyframes home-page-new {
-  0% {
-    height: 100vh;
-  }
-  100% {
-    height: calc(100vw * 9 / 16);
-  }
-}
-
-@keyframes slide-in {
-  0% {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  80% {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0px);
-  }
+::view-transition-old(rain),
+::view-transition-old(eight-sleep),
+::view-transition-old(bocci),
+::view-transition-old(specter),
+::view-transition-new(rain),
+::view-transition-new(eight-sleep),
+::view-transition-new(bocci),
+::view-transition-new(specter) {
+  animation-duration: 0.2s;
 }
 
 * {
@@ -97,6 +21,10 @@
 #home {
   scroll-snap-type: y mandatory;
   scroll-behavior: smooth;
+}
+
+html {
+  background: black;
 }
 
 body {
@@ -146,11 +74,16 @@ h1, tt {
   view-transition-name: email;
 }
 
+#home h1,
+#home a:has(#email) {
+  position: fixed;
+  z-index: 2;
+}
+
 section {
   position: relative;
   scroll-snap-align: start;
   display: flex;
-  flex-direction: row;
   cursor: none;
 
   &[theme="light"] {
@@ -184,43 +117,42 @@ section .content {
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  height: 100vh;
+  width: 100%;
   flex-grow: 1;
   flex-basis: 0;
+  corner-shape: superellipse(1.5);
+
+  img {
+    display: block;
+    width: 100%;
+    height: auto;
+    transition: opacity 0.2s ease-in-out;
+  }
 
   .video {
     position: relative;
     width: 100%;
-    height: 100%;
+    overflow: hidden;
 
-    img,
-    video {
-      position: relative;
+    img {
       display: block;
-      padding: 0;
-      border: 0;
-      line-height: 0;
-      vertical-align: top;
-      z-index: 0;
-      transition: opacity 0.2s ease-in-out;
-      height: calc(100% + 4px);
-      width: calc(100% + 4px);
-      margin: -2px 0 0 -2px;
-      clip-path: inset(1px);
-      object-fit: cover;
+      width: 100%;
+      height: auto;
+      scale: 1.01;
     }
 
     video {
       position: absolute;
       inset: 0;
+      object-fit: cover;
       z-index: 1;
       opacity: 0;
+      transition: opacity 0.2s ease-in-out;
+      margin: -2px;
+      height: calc(100% + 4px);
+      width: calc(100% + 4px);
+      clip-path: inset(2px);
     }
-  }
-
-  img {
-    width: 100%;
-    height: auto;
   }
 
   .contain {
@@ -230,10 +162,72 @@ section .content {
   }
 }
 
+#home .contain {
+  height: 100%;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+
+#home section {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#home section .content {
+  width: 100%;
+  flex: none;
+  aspect-ratio: 16 / 9;
+  transform-origin: center center;
+  transform: scale(var(--cover-scale, 1));
+}
+
+#home section .content:has(.contain) {
+  transform: scale(var(--contain-scale, 1));
+}
+
 #page section .content {
-  height: calc(100vw * 9 / 16);
-  border-radius: 12px;
-  corner-shape: superellipse(1.5);
+  border-radius: 14px;
+}
+
+@media (max-width: 768px) {
+  #home section {
+    height: auto;
+  }
+
+  #home section .content {
+    aspect-ratio: 4 / 5;
+    transform: none;
+  }
+
+  #home section .content:has(.contain) {
+    transform: none;
+  }
+
+  #page section {
+    flex-direction: column;
+  }
+
+  #page section .content {
+    flex: none;
+  }
+
+  #page section .content[style*="view-transition-name"] {
+    aspect-ratio: 4 / 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+#page section .content {
+  display: block;
 }
 
 #page {
@@ -256,7 +250,7 @@ section .title {
   text-wrap: nowrap;
 }
 
-a {
+a section {
   tt::before {
     content: "[ "
   }
@@ -270,5 +264,38 @@ a {
     tt::after {
       content: "] "
     }
+  }
+}
+
+@media (max-width: 768px) {
+  section {
+    cursor: auto;
+  }
+
+  section .title {
+    position: absolute;
+    opacity: 1;
+    bottom: 16px;
+    left: 16px;
+    transform: none;
+  }
+
+  #page section .title {
+    display: none;
+  }
+
+  a section {
+    tt::before, tt::after {
+      content: none;
+    }
+    tt::after {
+      content: "OPEN";
+      opacity: 0.4;
+      padding-left: 8px;
+    }
+  }
+
+  a:active section .title {
+    display: none;
   }
 }
