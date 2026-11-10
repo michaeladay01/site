@@ -2422,11 +2422,18 @@ footer {
    One class now, a <p> on every page, and the only <h1> is the title of
    the thing you are looking at. */
 .wordmark {
-  /* Set exactly as the nav beside it: same family, same size, same weight,
-     normal tracking. It was 700 with -0.03em tracking, which made it a second
-     kind of type in a bar that only has room for one. The weight swell is
-     what marks it out instead - it now has somewhere to swell FROM, which a
-     name already at 700 did not. */
+  /* Inter, because the swell needs a real weight axis, and the system stack
+     does not have one. Measured at 17px, stepping the weight up from 400:
+     the system face holds 67.68px wide through 400-500 and then jumps to
+     71.45px at 525 and holds there - two discrete faces, so the swell lands
+     as one on/off snap. Inter moves 72.00, 72.27, 72.53, 72.79, 73.05 ...
+     which is what makes it flow.
+     What was wrong before was never the typeface: it was 700 at -0.03em
+     tracking, a second kind of type in a bar with room for one. So this is
+     Inter at the nav's own size and weight, with no tracking of its own, and
+     the swell is what marks the name out. At 400 it has somewhere to swell
+     from, which a name already at 700 did not. */
+  font-family: 'Inter', var(--sans);
   font-size: 17px;
   line-height: 1;
   color: var(--ink);
