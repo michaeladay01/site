@@ -28,8 +28,8 @@
 <link rel="preload" as="image" href="media/runnit/carousel.jpg" fetchpriority="high">
 <link rel="preload" as="image" href="media/specter/logo.jpg">
 <link rel="preload" as="image" href="media/bocci/mark.jpg">
-<link rel="stylesheet" href="style.css?v=85">
-<link rel="stylesheet" href="home.css?v=85">
+<link rel="stylesheet" href="style.css?v=87">
+<link rel="stylesheet" href="home.css?v=87">
 <!--
   Home, after the THEO / Studioform / Merrell references.
 
@@ -307,6 +307,22 @@
        the tilt is removed, or the morph starts from a tilted box
        the clip's position is written down, so the frame it lands on is the
        frame it left rather than a jump back to zero */
+  /* Take the tilt out on press, so the click has nothing left to snap.
+     Removed again on release or cancel, because a press that does not become
+     a navigation should just go back to following the cursor. */
+  strip.addEventListener('pointerdown', function (e) {
+    var el = e.target.closest ? e.target.closest('.card') : null;
+    if (el) el.classList.add('is-pressing');
+  });
+
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) {
+    strip.addEventListener(ev, function () {
+      document.querySelectorAll('.card.is-pressing').forEach(function (el) {
+        el.classList.remove('is-pressing');
+      });
+    });
+  });
+
   strip.addEventListener('click', function (e) {
     var el = e.target.closest ? e.target.closest('.card') : null;
     if (!el) return;

@@ -2325,19 +2325,26 @@ footer {
   object-fit: cover;
 }
 
+/* The hand-over is early and short, and both halves of it are deliberate.
+   Early, because the two images are the same clip a fraction apart and any
+   difference between them is least visible while the frame is still small -
+   by 180ms it is barely a third of the way across. Short, for the same
+   reason: a long cross-fade draws both at once for longer, and that is what
+   would read as doubling. It starts at zero so the first frame of the move
+   is the card's own pixels, exactly as they were under the cursor. */
 ::view-transition-old(vt-rain),
 ::view-transition-old(vt-runnit),
 ::view-transition-old(vt-specter),
 ::view-transition-old(vt-bocci),
 ::view-transition-old(vt-eight-sleep) {
-  animation: md-morph-out 300ms var(--ease-out) 60ms both;
+  animation: md-morph-out 180ms var(--ease-out) both;
 }
 ::view-transition-new(vt-rain),
 ::view-transition-new(vt-runnit),
 ::view-transition-new(vt-specter),
 ::view-transition-new(vt-bocci),
 ::view-transition-new(vt-eight-sleep) {
-  animation: md-morph-in 300ms var(--ease-out) 60ms both;
+  animation: md-morph-in 180ms var(--ease-out) both;
 }
 
 /* The curve has to leave immediately. --ease-in-out spends its first third

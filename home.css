@@ -294,6 +294,31 @@
    when the browser snapshots the page, the morph starts from a tilted box and
    lands on a flat one — which is most of what reads as glitchy. The click
    handler adds this, and it wins over every hover rule. */
+/* Press: the tilt unwinds BEFORE the click.
+ *
+ * Flattening the card is not optional - a view-transition-name inside a 3D
+ * subtree cannot be snapshotted, and the browser skips the whole transition
+ * if it finds one. But dropping the tilt at the moment of the click is a hard
+ * snap of up to five degrees, right under your finger, and that is the last
+ * jolt at the start of the move.
+ *
+ * Pointer-down happens first. Between pressing and releasing a mouse button
+ * there is usually 80-150ms, which is enough to take the rotation out on a
+ * curve, so by the time the click fires and the snapshot is taken the card is
+ * already flat and nothing jumps. The scale stays, at the hover's own number,
+ * so the only thing that moves is the tilt.
+ */
+.card.is-pressing .frame,
+.card.is-pressing .stack {
+  transform: scale(1.045) !important;
+  transition: transform 130ms var(--ease-out) !important;
+}
+.card.is-pressing .frame > *,
+.card.is-pressing .stack > .layer {
+  transform: scale(1.06) !important;
+  transition: transform 130ms var(--ease-out) !important;
+}
+
 /* Clicking used to drop the hover transform altogether, which meant the
    snapshot was taken of an unscaled card while the one on screen was still
    scaled up - so the move began from a box smaller than what you were
