@@ -207,7 +207,16 @@
 @media (max-width: 560px) {
   .topbar { flex-direction: column; gap: 0.35rem; }
   .topbar .role { text-align: left; }
-  .strip { grid-template-columns: 1fr 1fr; }
+
+  /* One piece at a time. Two across on a phone puts each frame at about
+     160px wide, which is below the size at which you can read what is
+     happening inside it — and reading the work is the whole point of the
+     row. Full width and stacked, the frames stay the same shape and the
+     page simply becomes taller. The gap grows to match, or stacked cards
+     read as one strip rather than separate pieces. */
+  .strip,
+  .strip.strip--two { grid-template-columns: minmax(0, 1fr); }
+  .strip { gap: 1.5rem; }
 }
 
 /* The Eight Sleep card: four coded pieces stacked, one lit at a time. */
