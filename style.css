@@ -2361,12 +2361,31 @@ footer {
   animation-duration: 620ms;
   animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
 }
-/* The ground goes early but not instantly: at 200ms it had finished long
-   before the frame landed, so the page arrived in two separate events. */
-::view-transition-old(root),
+/* The ground: the page being left fades away ON TOP of the page arriving,
+ * which is already opaque underneath it. Always, in both directions.
+ *
+ * This is the fix for the blink, and it had been written already - but only
+ * under :root.is-back, so it applied only when the code had worked out that
+ * you were going backwards. Everywhere else the browser's own default ran,
+ * and that default cross-fades BOTH pages at once: halfway through, each one
+ * is half transparent and the white behind shows through the pair of them.
+ * That flash is the blink, and it appeared whenever the direction was not
+ * detected - which, with pagereveal missing in some engines and no Navigation
+ * API in Safari, was often.
+ *
+ * Nothing here asks which way we are going. There is never a frame in which
+ * both pages are transparent, so there is nothing for the white to come
+ * through. */
+@keyframes md-root-out { from { opacity: 1; } to { opacity: 0; } }
+
+::view-transition-old(root) {
+  animation: md-root-out 320ms var(--ease-out) both;
+  z-index: 1;
+}
 ::view-transition-new(root) {
-  animation-duration: 320ms;
-  animation-timing-function: var(--ease-out);
+  animation: none;
+  opacity: 1;
+  z-index: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2591,24 +2610,12 @@ footer {
    there is nothing to see fading. Giving each a small, opposite scale is what
    makes it read as a movement rather than a flash. */
 
-/* Coming back, nothing is transformed - only opacity moves.
- *
- * These keyframes used to scale both snapshots, 1 to 1.04 going out and 0.99
- * to 1 coming in. A ::view-transition snapshot of a whole page is one very
- * large texture, and both of these pages are mostly playing video; scaling
- * two of them at once, full screen, is the heaviest thing the transition
- * could possibly be asked to do, and it is where the jank on the way back
- * came from. Opacity alone composites essentially free.
- *
- * No opacity on the incoming one, on purpose. Fading BOTH pages leaves a
- * window where each is half transparent and the white behind shows through
- * both - that is the flash. The incoming page is opaque from the first frame
- * and the outgoing one fades away on top of it, so there is never a gap.
+/* Nothing is transformed in either direction - only opacity moves. A
+ * ::view-transition snapshot of a whole page is one very large texture, and
+ * these pages are mostly playing video; scaling two of them at once, full
+ * screen, is the heaviest thing the transition could be asked to do, and it
+ * is where the jank on the way back came from.
  */
-@keyframes md-back-out {
-  from { opacity: 1; }
-  to   { opacity: 0; }
-}
 
 /* On the way back, NO element carries a shared name — not on either side.
    Releasing it in JS on the outgoing page only works when a link was clicked;
@@ -2619,12 +2626,12 @@ footer {
 :root.is-back [data-vt] { view-transition-name: none !important; }
 
 :root.is-back::view-transition-old(root) {
-  /* Shorter as well. Back should feel like returning to something that was
-     already there - the index comes out of the back/forward cache exactly as
-     it was left, scroll and all - not like a page being built again. */
-  animation: md-back-out 240ms var(--ease-out) both;
-  /* Above the incoming page, so its fade is what reveals it. */
-  z-index: 1;
+  /* Only the duration differs on the way back now - the shape of it is the
+     same in both directions. Shorter, because back should feel like returning
+     to something that was already there: the index comes out of the back/
+     forward cache exactly as it was left, scroll and all, not like a page
+     being built again. */
+  animation-duration: 240ms;
 }
 :root.is-back::view-transition-new(root) {
   /* The incoming page does not animate at all: it is simply there, under the

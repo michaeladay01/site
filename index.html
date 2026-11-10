@@ -28,8 +28,8 @@
 <link rel="preload" as="image" href="media/runnit/carousel.jpg" fetchpriority="high">
 <link rel="preload" as="image" href="media/specter/logo.jpg">
 <link rel="preload" as="image" href="media/bocci/mark.jpg">
-<link rel="stylesheet" href="style.css?v=87">
-<link rel="stylesheet" href="home.css?v=87">
+<link rel="stylesheet" href="style.css?v=88">
+<link rel="stylesheet" href="home.css?v=88">
 <!--
   Home, after the THEO / Studioform / Merrell references.
 
@@ -79,6 +79,16 @@
       back = navigation.activation.navigationType === 'traverse';
     }
     if (back) root.classList.add('is-back');
+
+    /* Whatever direction this is, the index is the page ARRIVING, and an
+       arriving index must have no named card - otherwise it pairs with the
+       frame on the page being left and the tile flies backwards. The click
+       handler's inline name can still be on the card if this document came
+       out of the back/forward cache, and clearing it on pageshow is too late:
+       pagereveal is the last point before the snapshot is taken. */
+    document.querySelectorAll('[data-vt]').forEach(function (el) {
+      el.style.viewTransitionName = '';
+    });
 
     /* is-back is cleared when the transition has finished, NOT on pageshow.
        On a back/forward-cache restore pageshow fires immediately — while the
