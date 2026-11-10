@@ -2257,12 +2257,28 @@ footer {
 
 /* The pair that morphs. Names must be unique in a document, so each project
    declares its own on both ends — the card on the index, and the frame on the
-   project page showing the same clip. */
-[data-vt="rain"]        { view-transition-name: vt-rain; }
-[data-vt="runnit"]      { view-transition-name: vt-runnit; }
-[data-vt="specter"]     { view-transition-name: vt-specter; }
-[data-vt="bocci"]       { view-transition-name: vt-bocci; }
-[data-vt="eight-sleep"] { view-transition-name: vt-eight-sleep; }
+   project page showing the same clip.
+ *
+ * Only the PROJECT page's frame is named here. The index's card is named by
+ * the click handler, on the one card being clicked, and only then.
+ *
+ * That asymmetry is the whole mechanism for making the morph a one-way trip.
+ * A pair forms only when both ends carry the same name, so:
+ *   going in  — the click names the card, the project page is named already,
+ *               the pair forms, the frame flies.
+ *   coming back — the index arrives with no names on any card, so no pair can
+ *               form however the browser reads the navigation, and the pages
+ *               simply cross-fade.
+ * No detecting which direction we are travelling, which is what every earlier
+ * attempt at this rested on and what kept going wrong: pagereveal does not
+ * fire in every engine, the Navigation API does not exist in Safari, and a
+ * flag in sessionStorage can be read by the wrong page. Nothing here needs to
+ * know. */
+.wrap--work [data-vt="rain"]        { view-transition-name: vt-rain; }
+.wrap--work [data-vt="runnit"]      { view-transition-name: vt-runnit; }
+.wrap--work [data-vt="specter"]     { view-transition-name: vt-specter; }
+.wrap--work [data-vt="bocci"]       { view-transition-name: vt-bocci; }
+.wrap--work [data-vt="eight-sleep"] { view-transition-name: vt-eight-sleep; }
 
 /* The masthead is NOT named, and must not be. Naming it on both sides pairs
    two different boxes — a small label top-left on a project page against the
@@ -2528,7 +2544,11 @@ footer {
      above the thing it IS about. The masthead on a phone is the name and
      the one tab, on every page. */
   .masthead { gap: 0.35rem 1.25rem; }
-  .masthead .nav { margin-left: auto; }
+  /* Prefixed to match the specificity of the wide-screen rule that groups the
+     nav with the name; a bare .masthead .nav loses to it and the tab stayed
+     44px off the edge. */
+  .wrap--work .masthead .nav,
+  .wrap--read .masthead .nav { margin-left: auto; margin-right: 0; }
   .wrap--work .masthead .role,
   .wrap--read .masthead .role { display: none; }
 

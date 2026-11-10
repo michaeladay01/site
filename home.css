@@ -227,7 +227,11 @@
     gap: 0.35rem 1.25rem;
   }
   .topbar .wordmark { flex: 0 0 auto; }
-  .topbar .nav { margin-left: auto; gap: 1.25rem; }
+  /* Hard against the right edge. margin-right:auto groups the nav with the
+     name on a wide screen, and that has to be undone here or the tab floats
+     in the middle of the bar - with Contact hidden there is nothing to its
+     right to explain the gap. */
+  .topbar .nav { margin-left: auto; margin-right: 0; gap: 1.25rem; }
   .topbar .role { flex: 1 0 100%; text-align: left; }
 
 

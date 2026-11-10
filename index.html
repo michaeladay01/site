@@ -28,8 +28,8 @@
 <link rel="preload" as="image" href="media/runnit/carousel.jpg" fetchpriority="high">
 <link rel="preload" as="image" href="media/specter/logo.jpg">
 <link rel="preload" as="image" href="media/bocci/mark.jpg">
-<link rel="stylesheet" href="style.css?v=82">
-<link rel="stylesheet" href="home.css?v=82">
+<link rel="stylesheet" href="style.css?v=85">
+<link rel="stylesheet" href="home.css?v=85">
 <!--
   Home, after the THEO / Studioform / Merrell references.
 
@@ -107,6 +107,15 @@
     try { sessionStorage.removeItem('md-back'); } catch (err) {}
     document.querySelectorAll('.is-leaving').forEach(function (el) {
       el.classList.remove('is-leaving');
+    });
+    /* And the name the click put on the card it opened.
+       A back/forward cache restore hands back the same DOM, inline styles and
+       all, so without this the card you last opened would still be named when
+       you return - and that is a pair with the project page you are leaving,
+       which is the tile animation on the way back. Cleared on every show, so
+       the index is only ever named during the one navigation that uses it. */
+    document.querySelectorAll('[data-vt]').forEach(function (el) {
+      el.style.viewTransitionName = '';
     });
   });
 </script>
@@ -309,6 +318,16 @@
 
     var vid = el.querySelector('video');
     var vt = el.querySelector('[data-vt]');
+
+    /* Name the card being clicked, here and nowhere else.
+       The stylesheet names only the project page's frame, so this is the
+       other half of the pair and it exists for exactly one navigation. Come
+       back and the index is a fresh document, or one out of the back/forward
+       cache with this inline style gone, and either way no card is named - so
+       no pair can form on the way back and the pages cross-fade instead of
+       flying a tile to somewhere off screen. */
+    if (vt) vt.style.viewTransitionName = 'vt-' + vt.getAttribute('data-vt');
+
     if (vid && vt && !isNaN(vid.currentTime)) {
       try {
         sessionStorage.setItem('md-at:' + vt.getAttribute('data-vt'), String(vid.currentTime));
