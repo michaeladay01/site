@@ -2508,13 +2508,15 @@ footer {
    them and the role stayed right-aligned at 124px, which is what left its
    second line hanging in the middle of the column. */
 @media (max-width: 560px) {
+  /* The role goes on a phone, here as well as on the index. On a post it
+     was taking two of the four lines above the title - "Motion Designer"
+     then "Paris, France" - to say something the page is not about, directly
+     above the thing it IS about. The masthead on a phone is the name and
+     the one tab, on every page. */
   .masthead { gap: 0.35rem 1.25rem; }
   .masthead .nav { margin-left: auto; }
   .wrap--work .masthead .role,
-  .wrap--read .masthead .role {
-    flex: 1 0 100%;
-    text-align: left;
-  }
+  .wrap--read .masthead .role { display: none; }
 
   /* On the index, down to the name and the one tab.
    *
