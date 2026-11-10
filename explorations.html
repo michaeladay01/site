@@ -21,8 +21,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
       media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"></noscript>
-<link rel="stylesheet" href="style.css?v=90">
-<link rel="stylesheet" href="home.css?v=90">
+<link rel="stylesheet" href="style.css?v=91">
+<link rel="stylesheet" href="home.css?v=91">
 <!-- Both posts are pages on this site now: the writing, with the work itself
      running inside it. -->
 <script>
@@ -64,6 +64,11 @@
       back = navigation.activation.navigationType === 'traverse';
     }
     if (back) root.classList.add('is-back');
+
+    /* Nothing here is ever the far end of a morph, so the transition can only
+       be a cross-fade of two full-viewport snapshots - expensive, and a blink
+       whenever the arriving page is not painted yet. Go immediately instead. */
+    e.viewTransition.skipTransition();
 
     /* is-back is cleared when the transition has finished, NOT on pageshow.
        On a back/forward-cache restore pageshow fires immediately — while the

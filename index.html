@@ -28,8 +28,8 @@
 <link rel="preload" as="image" href="media/runnit/carousel.jpg" fetchpriority="high">
 <link rel="preload" as="image" href="media/specter/logo.jpg">
 <link rel="preload" as="image" href="media/bocci/mark.jpg">
-<link rel="stylesheet" href="style.css?v=90">
-<link rel="stylesheet" href="home.css?v=90">
+<link rel="stylesheet" href="style.css?v=91">
+<link rel="stylesheet" href="home.css?v=91">
 <!--
   Home, after the THEO / Studioform / Merrell references.
 
@@ -89,6 +89,21 @@
     document.querySelectorAll('[data-vt]').forEach(function (el) {
       el.style.viewTransitionName = '';
     });
+
+    /* And then don't transition at all.
+     *
+     * A cross-document transition means two full-viewport snapshots held and
+     * composited at once, and both of these pages are mostly playing video.
+     * It is the most expensive thing the site does, and arriving at the index
+     * it buys nothing: there is no pair to morph, so all it can produce is a
+     * cross-fade - one that also has to guess at a moment when the arriving
+     * page is fully painted, and looks like a blink when it guesses wrong.
+     *
+     * The transition earns its keep in exactly one place: the card flying
+     * into a project page. That is the project page arriving, and only the
+     * project pages keep theirs. Every other navigation is now immediate,
+     * which is what an ordinary link does and what cannot jank. */
+    e.viewTransition.skipTransition();
 
     /* is-back is cleared when the transition has finished, NOT on pageshow.
        On a back/forward-cache restore pageshow fires immediately — while the
