@@ -2255,29 +2255,56 @@ footer {
    sit in the same place and read the same, so the 200ms root cross-fade
    carries them with no visible change at all. */
 
-/* The pair is the same picture at two sizes, so only ONE of the two snapshots
-   should be on screen: the new one, carried by the group from where the old
-   one was. Cross-fading them ghosts; keeping both at full opacity (which is
-   what a bare animation:none does) leaves the old one covering the new for
-   the whole transition and then popping off at the end. */
+/* The pair, cross-faded — and the order matters.
+ *
+ * The old snapshot used to be dropped to opacity 0 immediately, so from the
+ * very first frame the only thing travelling was the NEW page's hero. That
+ * is not what you were looking at when you clicked: the card was showing a
+ * live frame of the clip, and the hero shows whatever it has decoded, which
+ * early on is its poster. The picture therefore changed at the instant of
+ * the click, which is the blink.
+ *
+ * So the move now BEGINS on the old snapshot — the card's own pixels, exactly
+ * as last seen — and hands over to the new one while it travels. The two are
+ * the same clip at nearly the same timestamp and both are 16:9, so the
+ * hand-over has almost nothing to reconcile. Both are stretched to the group
+ * box so they scale as one thing rather than drifting apart inside it.
+ *
+ * The earlier ghosting this replaced came from the two ends being different
+ * elements and from the back direction forming a pair at all; neither is
+ * true any more.
+ */
+@keyframes md-morph-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes md-morph-in  { from { opacity: 0; } to { opacity: 1; } }
+
+::view-transition-old(vt-rain),
+::view-transition-old(vt-runnit),
+::view-transition-old(vt-specter),
+::view-transition-old(vt-bocci),
+::view-transition-old(vt-eight-sleep),
+::view-transition-new(vt-rain),
+::view-transition-new(vt-runnit),
+::view-transition-new(vt-specter),
+::view-transition-new(vt-bocci),
+::view-transition-new(vt-eight-sleep) {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+
 ::view-transition-old(vt-rain),
 ::view-transition-old(vt-runnit),
 ::view-transition-old(vt-specter),
 ::view-transition-old(vt-bocci),
 ::view-transition-old(vt-eight-sleep) {
-  animation: none;
-  opacity: 0;
+  animation: md-morph-out 300ms var(--ease-out) 60ms both;
 }
 ::view-transition-new(vt-rain),
 ::view-transition-new(vt-runnit),
 ::view-transition-new(vt-specter),
 ::view-transition-new(vt-bocci),
 ::view-transition-new(vt-eight-sleep) {
-  animation: none;
-  opacity: 1;
-  height: 100%;
-  width: 100%;
-  object-fit: cover;
+  animation: md-morph-in 300ms var(--ease-out) 60ms both;
 }
 
 /* The curve has to leave immediately. --ease-in-out spends its first third
@@ -2286,13 +2313,19 @@ footer {
    and decelerates into place — the move feels like a response to the click
    rather than something that had to think about it first. */
 ::view-transition-group(*) {
-  animation-duration: 480ms;
-  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Longer and softer than it was. 480ms on a curve that leaves at full
+     speed reads as a snap - correct for a button, wrong for a frame the
+     size of a card crossing the page. This one still starts without
+     hesitating but spends its second half settling, which is what makes
+     the move feel like weight rather than a cut. */
+  animation-duration: 620ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
 }
-/* The ground is out of the way before the frame has finished arriving. */
+/* The ground goes early but not instantly: at 200ms it had finished long
+   before the frame landed, so the page arrived in two separate events. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 200ms;
+  animation-duration: 320ms;
   animation-timing-function: var(--ease-out);
 }
 
@@ -2378,19 +2411,44 @@ footer {
 .wrap--read .masthead .nav,
 .wrap--work .masthead .nav { gap: 2rem; }
 
-/* The name was smaller than the nav beside it. It matches the index's
-   wordmark instead. */
-.wrap--read .masthead h1,
-.wrap--work .masthead h1 {
+/* The name, in every masthead ------------------------------------------
+   It used to be left off the index entirely: the bar there was two links
+   and a job title, which on a phone is the first thing you see and tells
+   you neither whose site this is nor where the way back is. On a project
+   page it was also a second <h1> competing with the project's own title.
+   One class now, a <p> on every page, and the only <h1> is the title of
+   the thing you are looking at. */
+.wordmark {
   font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1;
+  color: var(--ink);
+}
+.wordmark a { color: inherit; text-decoration: none; }
+
+/* On the index the name is the page you are already on, so it is text. */
+.wordmark[aria-current="page"] { cursor: default; }
+
+/* Everywhere else it is the way home, and says so. A name alone does not
+   read as a control - the arrow is what makes it one, which is the whole
+   point on a phone where there is no hover to discover it with. */
+.wordmark a.home::before {
+  content: "\2190";
+  margin-right: 0.45em;
+  color: var(--ink-faint);
+  transition: color 160ms var(--ease-out), transform 160ms var(--ease-out);
+  display: inline-block;
+}
+.wordmark a.home:hover::before { color: var(--ink); transform: translateX(-2px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .wordmark a.home::before,
+  .wordmark a.home:hover::before { transition: none; transform: none; }
 }
 
-/* Masthead: nav only, no name -------------------------------------------
-   Used by the index and by Explorations. The name is not repeated up here —
-   the nav is the way back, and the page says who it belongs to once. */
+/* Masthead ---------------------------------------------------------------
+   Used by the index and by Explorations. */
 
 .topbar {
   display: flex;
@@ -2403,11 +2461,49 @@ footer {
 .topbar .nav { display: flex; gap: 2rem; }
 /* style.css sets .nav a to 13px for the inner pages, so the size has to be
    stated here rather than inherited from .topbar. */
-.topbar .nav a { font-size: 17px; color: var(--ink); }
+/* line-height 1 to match the name's. The baselines already agreed - the
+   glyphs sat within half a pixel of each other - but the nav's line box was
+   28px against the name's 17px, so the two boxes were five pixels apart and
+   anything measured from them, the row's own alignment included, was off by
+   that much. Same box, same line. */
+.topbar .nav a { font-size: 17px; color: var(--ink); line-height: 1; }
+.topbar .nav { line-height: 1; }
+.masthead .nav,
+.masthead .nav a { line-height: 1; }
 /* The role keeps the same size as the nav so the masthead reads as one line
    rather than two things of different weight. */
 .topbar .role { color: var(--ink); font-size: 17px; text-align: right; }
 
+
+/* On a phone the masthead is the only thing telling you where you are, so
+   the name and the tab share the top line and the role drops beneath as a
+   caption. This lives in style.css, not home.css: the project pages load
+   style.css and work.css only, so the same rules in home.css never reached
+   them and the role stayed right-aligned at 124px, which is what left its
+   second line hanging in the middle of the column. */
+@media (max-width: 560px) {
+  .masthead { gap: 0.35rem 1.25rem; }
+  .masthead .nav { margin-left: auto; }
+  .wrap--work .masthead .role,
+  .wrap--read .masthead .role {
+    flex: 1 0 100%;
+    text-align: left;
+  }
+
+  /* On the index, down to the name and the one tab.
+   *
+   * Four things at almost the same size - name, Explorations, Contact, and
+   * the role on a second line - is too much to take in at a glance on a
+   * phone, and two of them say nothing new: the bio immediately below opens
+   * "I'm a motion designer working across brand and digital", and the full
+   * email is set out at the foot of the page. Both earn their place on a wide
+   * screen, where the bar is one line with room in it. Neither earns it here.
+   *
+   * The project pages keep their role, because those pages have no bio under
+   * the masthead to say it instead. */
+  .topbar .role { display: none; }
+  .topbar .nav a[href^="mailto:"] { display: none; }
+}
 
 /* No entrance stagger when the page was reached through a view transition. */
 .is-arriving [data-rise] {
@@ -2426,17 +2522,23 @@ footer {
    there is nothing to see fading. Giving each a small, opposite scale is what
    makes it read as a movement rather than a flash. */
 
+/* Coming back, nothing is transformed - only opacity moves.
+ *
+ * These keyframes used to scale both snapshots, 1 to 1.04 going out and 0.99
+ * to 1 coming in. A ::view-transition snapshot of a whole page is one very
+ * large texture, and both of these pages are mostly playing video; scaling
+ * two of them at once, full screen, is the heaviest thing the transition
+ * could possibly be asked to do, and it is where the jank on the way back
+ * came from. Opacity alone composites essentially free.
+ *
+ * No opacity on the incoming one, on purpose. Fading BOTH pages leaves a
+ * window where each is half transparent and the white behind shows through
+ * both - that is the flash. The incoming page is opaque from the first frame
+ * and the outgoing one fades away on top of it, so there is never a gap.
+ */
 @keyframes md-back-out {
-  from { opacity: 1; transform: scale(1); }
-  to   { opacity: 0; transform: scale(1.04); }
-}
-@keyframes md-back-in {
-  /* No opacity here on purpose. Fading BOTH pages at once leaves a window
-     where each is half transparent and the white page behind shows through both
-     — that is the flash. The incoming page is opaque from the first frame and
-     the outgoing one fades away on top of it, so there is never a gap. */
-  from { transform: scale(0.99); }
-  to   { transform: none; }
+  from { opacity: 1; }
+  to   { opacity: 0; }
 }
 
 /* On the way back, NO element carries a shared name — not on either side.
@@ -2448,14 +2550,18 @@ footer {
 :root.is-back [data-vt] { view-transition-name: none !important; }
 
 :root.is-back::view-transition-old(root) {
-  animation: md-back-out 340ms var(--ease-out) both;
-  transform-origin: 50% 40%;
+  /* Shorter as well. Back should feel like returning to something that was
+     already there - the index comes out of the back/forward cache exactly as
+     it was left, scroll and all - not like a page being built again. */
+  animation: md-back-out 240ms var(--ease-out) both;
   /* Above the incoming page, so its fade is what reveals it. */
   z-index: 1;
 }
 :root.is-back::view-transition-new(root) {
-  animation: md-back-in 420ms var(--ease-out) both;
-  transform-origin: 50% 40%;
+  /* The incoming page does not animate at all: it is simply there, under the
+     one fading off it. */
+  animation: none;
+  opacity: 1;
   z-index: 0;
 }
 

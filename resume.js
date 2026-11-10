@@ -36,4 +36,38 @@
      the poster covers the box, and the poster is a real frame of the clip. */
   if (vid.readyState >= 1) seek();
   else vid.addEventListener('loadedmetadata', seek, { once: true });
+
+  /* And hold that frame until the move has landed.
+   *
+   * What travels across the screen is a STILL of the hero, captured before
+   * the transition starts. The real video carries on playing underneath it
+   * for the whole move, so by the time the browser swaps the still for the
+   * live element the clip is half a second further on - and you see it cut.
+   * Pausing for the duration means the frame you land on is the frame that
+   * flew there.
+   *
+   * Released on whichever comes first, because a clip left paused is far
+   * worse than a small cut: the transition finishing, a bfcache restore, or
+   * a timeout for the cases where no transition runs at all.
+   */
+  var held = false;
+
+  function hold() {
+    if (!vid.paused) { vid.pause(); held = true; }
+  }
+
+  function release() {
+    if (!held) return;
+    held = false;
+    var playing = vid.play();
+    if (playing && playing.catch) playing.catch(function () {});
+  }
+
+  hold();
+  setTimeout(release, 900);
+  window.addEventListener('pageshow', release);
+  window.addEventListener('pagereveal', function (e) {
+    if (!e.viewTransition) { release(); return; }
+    e.viewTransition.finished.catch(function () {}).then(release);
+  });
 }());

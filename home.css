@@ -31,7 +31,11 @@
   /* Six pieces, set as two rows of three rather than one long row: at six
      across each frame is too small to read what is happening in it. */
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(0.75rem, 1.6vw, 1.25rem) clamp(0.5rem, 1.2vw, 0.875rem);
+  /* The column gap has to clear what the hover adds. A card grows by 4.5%,
+     so a 270px frame gains about 12px of width - 6px on each side - and the
+     old 8-14px gutter left a hovered card all but touching its neighbour.
+     This keeps real air between them at full hover. */
+  gap: clamp(1rem, 2vw, 1.5rem);
 }
 
 .card { display: block; }
@@ -136,10 +140,10 @@
 .card { position: relative; }
 .card:hover, .card:active { z-index: 1; }
 
-/* The label follows, a touch behind, so the card reads as one object. */
-.card .card-label { transition: transform 520ms var(--ease-snap); }
-.card:hover .card-label { transform: translateX(3px); }
-.card .card-label { transition: transform 620ms var(--ease-snap), opacity 400ms var(--ease-out); }
+/* The label holds still. It used to slide 3px to the right on hover, which
+   reads as the text drifting into the card rather than the card growing -
+   the name of the piece is a caption, not part of the animation. */
+.card .card-label { transition: opacity 400ms var(--ease-out); }
 
 .card-label {
   display: flex;
@@ -205,8 +209,20 @@
 }
 
 @media (max-width: 560px) {
-  .topbar { flex-direction: column; gap: 0.35rem; }
-  .topbar .role { text-align: left; }
+  /* Stacked in a column, the bar read as three unrelated lines. The name
+     and the links belong on one row - that is the shape of a masthead and
+     it is what makes the name legible as the way home - and the role drops
+     underneath as the caption it is. */
+  .topbar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem 1.25rem;
+  }
+  .topbar .wordmark { flex: 0 0 auto; }
+  .topbar .nav { margin-left: auto; gap: 1.25rem; }
+  .topbar .role { flex: 1 0 100%; text-align: left; }
+
 
   /* One piece at a time. Two across on a phone puts each frame at about
      160px wide, which is below the size at which you can read what is
@@ -267,12 +283,21 @@
    when the browser snapshots the page, the morph starts from a tilted box and
    lands on a flat one — which is most of what reads as glitchy. The click
    handler adds this, and it wins over every hover rule. */
+/* Clicking used to drop the hover transform altogether, which meant the
+   snapshot was taken of an unscaled card while the one on screen was still
+   scaled up - so the move began from a box smaller than what you were
+   looking at, and the first thing you saw was a jump backwards. Only the
+   3D has to go (it is what blocks the snapshot); the flat scale stays, and
+   these are the same numbers the hover uses, so the frame the browser
+   captures is exactly the frame already on screen. */
 .card.is-leaving .frame,
-.card.is-leaving .stack,
+.card.is-leaving .stack {
+  transform: scale(1.045) !important;
+  transition: none !important;
+}
 .card.is-leaving .frame > *,
-.card.is-leaving .stack > .layer,
-.card.is-leaving .card-label {
-  transform: none !important;
+.card.is-leaving .stack > .layer {
+  transform: scale(1.06) !important;
   transition: none !important;
 }
 

@@ -21,8 +21,15 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
       media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"></noscript>
-<link rel="stylesheet" href="style.css?v=65">
-<link rel="stylesheet" href="home.css?v=65">
+<!-- The card posters. Without these a card can still be blank when it is
+     clicked, and the snapshot the morph carries across the page is then a
+     white box. The first two are the row you see without scrolling. -->
+<link rel="preload" as="image" href="media/rain/icon.jpg" fetchpriority="high">
+<link rel="preload" as="image" href="media/runnit/carousel.jpg" fetchpriority="high">
+<link rel="preload" as="image" href="media/specter/logo.jpg">
+<link rel="preload" as="image" href="media/bocci/mark.jpg">
+<link rel="stylesheet" href="style.css?v=74">
+<link rel="stylesheet" href="home.css?v=74">
 <!--
   Home, after the THEO / Studioform / Merrell references.
 
@@ -110,6 +117,7 @@
 
   <!-- Nav only. The name is said once, at the bottom. -->
   <header class="topbar" data-rise="1">
+    <p class="wordmark" aria-current="page">Michaela&nbsp;Day</p>
     <nav class="nav">
       <a href="explorations.html">Explorations</a>
       <a href="mailto:studio@michaela.day">Contact</a>
@@ -236,7 +244,7 @@
 </div>
 
 <script src="starfield.js"></script>
-<script src="name.js?v=4"></script>
+<script src="name.js?v=6"></script>
 <script>
 /* The hover.
    One rAF writes the cursor's position inside the hovered card to two custom

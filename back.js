@@ -72,4 +72,16 @@
      whatever the incoming document manages to work out about direction. */
   window.addEventListener('pageswap', release);
   window.addEventListener('pagehide', release);
+
+  /* And give the name back when the page returns.
+   *
+   * release() sets the name inline, which outlives the page in the back/
+   * forward cache. Visit a project, go back, then open the same project
+   * again and the hero would arrive with no name at all - so the pair could
+   * not form and the morph, the thing the site is built around, simply would
+   * not happen from the second visit onwards. Restoring it on pageshow lets
+   * the stylesheet's own name apply again. */
+  window.addEventListener('pageshow', function () {
+    if (hero) hero.style.viewTransitionName = '';
+  });
 }());
