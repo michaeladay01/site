@@ -79,7 +79,14 @@
    does the rest, so nothing here is a keyframe and the whole thing reverses
    cleanly from wherever it was interrupted. */
 
-.strip { perspective: 1400px; }
+/* Perspective sits on each CARD, not on the row.
+   On the row, taking it off to flatten the one card being clicked took it
+   off all six at once - and with it their composited layers - which is the
+   whole strip flashing white for a frame before the morph began. Per card,
+   flattening one disturbs nobody else. The tilt is driven by the cursor's
+   position inside each card anyway, so this is also the more correct place
+   for it. */
+.card { perspective: 1400px; }
 
 .frame,
 .card--code .stack {
@@ -306,9 +313,9 @@
    gives up and skips the whole transition, which is the hard cut. perspective,
    preserve-3d and will-change: transform all create one, so all three are
    dropped the moment a card is clicked. */
-.strip.is-leaving { perspective: none !important; }
-.strip.is-leaving .frame,
-.strip.is-leaving .stack {
+.card.is-leaving { perspective: none !important; }
+.card.is-leaving .frame,
+.card.is-leaving .stack {
   transform-style: flat !important;
   will-change: auto !important;
 }
