@@ -1392,7 +1392,16 @@ footer {
   background: var(--msg-bg);
   color: var(--msg-ink);
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
-  letter-spacing: calc(var(--pt) * -0.41);
+  /* No tracking here - it belongs on the elements that carry the type sizes.
+     Two ways of setting it from this element were both wrong:
+     calc(var(--pt) * -0.41) made it nearly twice too tight, because --pt is a
+     cqw and this element is itself the container; an element cannot query its
+     own container, so it resolved against the container OUTSIDE the scene
+     while the bubble's font-size, as a child, resolved against the scene
+     (--pt came out 2.79 against 1.535, giving -0.0439em).
+     Then -0.0241em here came out too loose, because letter-spacing inherits
+     as a computed LENGTH: it resolved against this element's own 15px and
+     handed -0.361px down to 26px text, which is -0.0139em. */
 }
 
 /* Who sent it. A small label above the run, which is what the source shows
@@ -1401,7 +1410,9 @@ footer {
   margin: 0 0 calc(var(--pt) * 3) calc(var(--pt) * 10);
   color: var(--msg-grey);
   font-size: calc(var(--pt) * 11);
-  letter-spacing: 0;
+  /* 11pt Caption 2 tracks the other way in Apple's table: +0.07pt, which is
+     +0.07/11 of the size. Small type opens up, body type tightens. */
+  letter-spacing: 0.0064em;
 }
 
 /* Thread. Anchored to the bottom, because a conversation grows upward. */
@@ -1435,6 +1446,9 @@ footer {
   max-width: 73%;
   font-size: calc(var(--pt) * 17);
   line-height: calc(var(--pt) * 22);
+  /* 17pt Body: -0.41pt, which is -0.41/17 of the size. Set against the size
+     itself so it cannot drift from it. */
+  letter-spacing: -0.0241em;
   word-wrap: break-word;
 }
 
