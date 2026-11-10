@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Explorations — Michaela Day</title>
+<meta name="description" content="Projects built to work something out.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Explorations — Michaela Day">
+<meta property="og:description" content="Projects built to work something out.">
+<meta property="og:image" content="media/writing/xp.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#ffffff">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Inter is only used for the name. Loaded as a blocking stylesheet it
+     holds up the first paint of the page you are transitioning INTO, which
+     shows up as a pause before the morph starts. This loads it out of band
+     and applies it when it arrives; Helvetica carries the page until then. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
+      media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"></noscript>
+<link rel="stylesheet" href="style.css?v=64">
+<link rel="stylesheet" href="home.css?v=64">
+<!-- Both posts are pages on this site now: the writing, with the work itself
+     running inside it. -->
+<script>
+  /* Arriving through a view transition, the page must not also perform its
+     entrance stagger: the morph and a page-wide fade-and-rise run at the same
+     time and fight each other. This has to be set before first paint, so it
+     is inline in the head rather than in a file.
+
+     The clearing matters as much as the setting. These pages come back from
+     the back/forward cache with their DOM exactly as it was left — including
+     the is-leaving class that was added to kill the 3D context on the way out.
+     Left in place it permanently disables the card hover on the page you
+     return to. */
+  window.addEventListener('pagereveal', function (e) {
+    if (!e.viewTransition) return;
+    var root = document.documentElement;
+    root.classList.add('is-arriving');
+    /* Going back is a different move from going in, so it gets a different
+       animation. Either the browser tells us (a real back/forward traverse)
+       or the page we left did, on its way out. */
+    var flag = false;
+    try { flag = sessionStorage.getItem('md-back') === '1'; } catch (err) {}
+    try { sessionStorage.removeItem('md-back'); } catch (err) {}
+
+    /* Only the index and Explorations can be arrived AT backwards; a project
+       page is always somewhere you went to. Checking that stops the flag a
+       project page sets on its way out from being read by the next project
+       page along. */
+    var here = location.pathname.split('/').pop() || 'index.html';
+    var isIndex = here === 'index.html' || here === 'explorations.html';
+
+    var back = flag && isIndex;
+
+    /* Safari has no Navigation API, so navigation.activation cannot be relied
+       on for the direction — which is why this was never firing. The flag is
+       set by the page being left, on pagehide, which happens for every way of
+       leaving including the browser's own back button. */
+    if (!back && isIndex && window.navigation && navigation.activation) {
+      back = navigation.activation.navigationType === 'traverse';
+    }
+    if (back) root.classList.add('is-back');
+
+    /* is-back is cleared when the transition has finished, NOT on pageshow.
+       On a back/forward-cache restore pageshow fires immediately — while the
+       animation is still running — and stripping the class mid-flight pulls
+       the rules out from under it, so it cancels and the page snaps into
+       place. The catch is there because the browser skips the transition
+       outright in some cases and an unhandled rejection is noise. */
+    /* ready rejects too when the transition is skipped, and nothing here
+       reads it — an untouched rejected promise is reported as an unhandled
+       error, which is where "AbortError: Transition was skipped" in the
+       console came from. */
+    if (e.viewTransition.ready) e.viewTransition.ready.catch(function () {});
+    e.viewTransition.finished
+      .catch(function () {})
+      .then(function () { root.classList.remove('is-back'); });
+  });
+  window.addEventListener('pageshow', function () {
+    /* is-arriving is NOT cleared here. It suppresses the entrance stagger, and
+       removing it mid-life flips [data-rise] from animation:none back to the
+       rise keyframes — which restarts them, fading the whole page in again
+       just after the morph has landed. That is the blink. It only needs
+       clearing for a page coming back from the bfcache, which gets a fresh
+       pagereveal anyway. */
+    /* Only the leftover card state is cleared here. is-arriving stays for the
+       life of the page and is-back is cleared by the transition itself. */
+    try { sessionStorage.removeItem('md-back'); } catch (err) {}
+    document.querySelectorAll('.is-leaving').forEach(function (el) {
+      el.classList.remove('is-leaving');
+    });
+  });
+</script>
+</head>
+<body>
+
+<div class="wrap wrap--home">
+
+  <header class="topbar" data-rise="1">
+    <nav class="nav">
+      <a href="index.html#work">Work</a>
+      <a href="mailto:studio@michaela.day">Contact</a>
+    </nav>
+    <p class="role">Motion Designer, Paris</p>
+  </header>
+
+  <main>
+    <section class="strip strip--two" data-rise="2" aria-label="Explorations">
+      <a class="card" href="an-internet-we-remember.html">
+        <span class="frame">
+          <video muted loop playsinline autoplay preload="metadata" poster="media/writing/xp.jpg">
+            <source src="media/writing/xp.webm" type="video/webm">
+            <source src="media/writing/xp.mp4" type="video/mp4">
+          </video>
+        </span>
+        <span class="card-label">An Internet We Remember <span>8 Nov 2026</span></span>
+        <span class="card-sub">I rebuilt a very specific moment of the internet: 2005. Windows XP,
+          and the websites, applications and little rituals I remembered from being online
+          at the time.</span>
+      </a>
+
+      <a class="card" href="in-other-words.html">
+        <span class="frame">
+          <video muted loop playsinline autoplay preload="metadata" poster="media/writing/iow.jpg">
+            <source src="media/writing/iow.webm" type="video/webm">
+            <source src="media/writing/iow.mp4" type="video/mp4">
+          </video>
+        </span>
+        <span class="card-label">In Other Words <span>3 Oct 2026</span></span>
+        <span class="card-sub">A crossword app, started from how it should move and worked
+          backwards to the screens. Built over a few days in October, and still moving.</span>
+      </a>
+    </section>
+  </main>
+
+  <footer class="signoff signoff--plain" data-rise="3">
+    <p class="signoff-meta">
+      <a href="mailto:studio@michaela.day">studio@michaela.day</a>
+      <span>Available for commissions</span>
+    </p>
+  </footer>
+
+</div>
+
+<script>
+/* The same hover as the index: the cursor position drives the tilt. */
+(function () {
+  'use strict';
+  var strip = document.querySelector('.strip');
+  if (!strip) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (!window.matchMedia('(hover: hover)').matches) return;
+  var card = null, px = 0, py = 0, raf = 0;
+  function write() {
+    raf = 0;
+    if (!card) return;
+    card.style.setProperty('--mx', px.toFixed(3));
+    card.style.setProperty('--my', py.toFixed(3));
+  }
+  function clear() {
+    if (card) { card.style.removeProperty('--mx'); card.style.removeProperty('--my'); }
+  }
+  strip.addEventListener('pointermove', function (e) {
+    var el = e.target.closest ? e.target.closest('.card') : null;
+    if (!el) return;
+    if (el !== card) { clear(); card = el; strip.classList.add('is-hovering'); }
+    var r = el.getBoundingClientRect();
+    px = ((e.clientX - r.left) / r.width) * 2 - 1;
+    py = ((e.clientY - r.top) / r.height) * 2 - 1;
+    if (!raf) raf = requestAnimationFrame(write);
+  }, { passive: true });
+  strip.addEventListener('pointerleave', function () {
+    clear(); card = null; strip.classList.remove('is-hovering');
+  });
+}());
+</script>
+
+</body>
+</html>

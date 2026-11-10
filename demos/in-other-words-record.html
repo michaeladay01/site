@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>In Other Words — record</title>
+<style>
+  :root {
+    --paper: #FFFFFF; --ink: #000000; --gold: #E8B93C; --parcel: #E5E3DA; --card: #F3F1EC;
+    --helped: #F7E7BF; /* gold mixed 65% with white */
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --rounded: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+  body { font-family: var(--font); -webkit-font-smoothing: antialiased; }
+  button { all: unset; cursor: pointer; }
+  button:focus, button:focus-visible { outline: none; }
+  .device { width: 402px; height: 874px; background: var(--paper); overflow: hidden; color: var(--ink); border-radius: 28px; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 12px 40px rgba(0,0,0,.08); user-select: none; -webkit-user-select: none; }
+  .status { position: absolute; inset: 0 0 auto 0; height: 54px; z-index: 50; pointer-events: none; }
+  .status .time { position: absolute; left: 48px; top: 19px; font: 600 17px var(--font); letter-spacing: -.2px; }
+  .status .island { position: absolute; left: 50%; top: 11px; width: 126px; height: 37px; margin-left: -63px; background: #000; border-radius: 20px; }
+  .status .right { position: absolute; right: 34px; top: 21px; display: flex; gap: 6px; align-items: center; }
+  .status .batt { width: 27px; height: 13px; border-radius: 4px; border: 1.5px solid rgba(0,0,0,.4); padding: 1.5px; }
+  .status .batt i { display: block; height: 100%; width: 100%; background: var(--ink); border-radius: 2px; }
+
+  .page { position: absolute; inset: 54px 0 0 0; padding: 8px 20px 40px; display: flex; flex-direction: column; gap: 26px; }
+  .arrive { will-change: transform; transform-origin: top center; }
+  .head { position: relative; text-align: center; }
+  .head b { display: block; font: 600 19px/1.25 var(--font); }
+  .head span { display: block; font: 400 19px/1.25 var(--font); color: rgba(0,0,0,.5); }
+  .head .back { position: absolute; left: -8px; top: 4px; width: 40px; height: 40px; display: grid; place-items: center; }
+
+  .avg { background: var(--gold); border-radius: 6px; padding: 20px; min-height: 230px; display: flex; flex-direction: column; }
+  .avg .k { font: 600 17px var(--font); opacity: .6; }
+  .avg .big { font: 700 64px/1.15 var(--font); letter-spacing: -2px; font-variant-numeric: tabular-nums; display: flex; }
+  .avg .big i { font-style: normal; display: inline-block; transform-origin: bottom center; will-change: transform, opacity; }
+  .avg .row { margin-top: auto; padding-top: 28px; display: flex; }
+  .avg .row div { flex: 1; }
+  .avg .row span { display: block; font: 400 14px var(--font); opacity: .6; }
+  .avg .row b { display: block; font: 600 22px var(--font); font-variant-numeric: tabular-nums; margin-top: 2px; }
+
+  .month { display: flex; flex-direction: column; gap: 24px; }
+  .mhead { display: flex; align-items: flex-start; }
+  .mtitle { flex: 1; position: relative; height: 56px; margin-left: -20px; overflow: hidden; -webkit-mask: linear-gradient(to right, #000 calc(100% - 14px), transparent); mask: linear-gradient(to right, #000 calc(100% - 14px), transparent); }
+  .mname { position: absolute; left: 20px; top: 0; white-space: nowrap; will-change: transform; }
+  .mname b { display: block; font: 700 30px/1.15 var(--font); letter-spacing: -.8px; }
+  .mname span { display: block; font: 600 15px var(--font); color: rgba(0,0,0,.55); margin-top: 2px; }
+  .arrows { display: flex; gap: 4px; }
+  .arrows button { width: 40px; height: 40px; display: grid; place-items: center; }
+  .arrows button.off { opacity: .25; pointer-events: none; }
+  .cal { position: relative; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+  .calpage { position: absolute; left: 0; top: 0; width: 100%; display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; will-change: transform; }
+  .day { aspect-ratio: 1; display: grid; place-items: center; font: 700 17px var(--rounded); background: var(--parcel); color: rgba(0,0,0,.9); cursor: pointer; will-change: transform; position: relative; }
+  .day.done { background: var(--gold); color: var(--ink); }
+  .day.helped { background: var(--helped); }
+  .day.ahead { color: rgba(0,0,0,.3); cursor: default; }
+  .day.today::after { content: ""; position: absolute; inset: 0; border: 3px solid var(--ink); }
+  .day.blank { background: none; cursor: default; }
+  .slide { will-change: transform, opacity; }
+
+  .dim { position: absolute; inset: 0; background: rgba(0,0,0,.25); opacity: 0; pointer-events: none; z-index: 60; }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: #fff; border-radius: 6px 6px 0 0; padding: 14px 20px 36px; z-index: 61; box-shadow: 0 120px 0 #fff; transform: translateY(110%); will-change: transform; }
+  .sheet .rowx { display: flex; align-items: center; gap: 16px; padding: 14px 44px 14px 0; position: relative; }
+  .thumb { width: 56px; height: 56px; flex: none; }
+  .sheet .when b { display: block; font: 600 18px var(--font); }
+  .sheet .when span { display: block; font: 400 15px var(--font); color: rgba(0,0,0,.55); margin-top: 4px; }
+  .sheet .x { position: absolute; right: 0; top: 50%; margin-top: -30px; width: 36px; height: 36px; border-radius: 50%; background: var(--card); display: grid; place-items: center; }
+  .sheet .see { width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; height: 54px; border-radius: 999px; background: var(--ink); color: #fff; font: 600 17px var(--font); margin-top: 22px; }
+  .legend { position: absolute; left: 0; right: 0; display: flex; justify-content: center; gap: 18px; font: 500 13px var(--font); color: rgba(0,0,0,.5); }
+  .legend i { display: inline-block; width: 12px; height: 12px; vertical-align: -1px; margin-right: 6px; }
+</style>
+</head>
+<body>
+<div class="device" id="device">
+  <div class="status">
+    <div class="time">9:41</div><div class="island"></div>
+    <div class="right">
+      <svg width="18" height="12" viewBox="0 0 18 12"><path fill="#000000" d="M9 2.6c2.4 0 4.6.9 6.3 2.5l1.3-1.3A10.7 10.7 0 0 0 9 .7C6.1.7 3.5 1.8 1.4 3.8l1.3 1.3A8.8 8.8 0 0 1 9 2.6Zm0 3.7c1.4 0 2.7.5 3.7 1.4l1.3-1.3A7.1 7.1 0 0 0 9 4.4c-1.9 0-3.6.7-5 2l1.3 1.3c1-.9 2.3-1.4 3.7-1.4Zm0 3.5L11.2 7.6A3.2 3.2 0 0 0 9 8.4c-.8 0-1.6.3-2.2.8L9 11.4Z"/></svg>
+      <div class="batt"><i></i></div>
+    </div>
+  </div>
+  <div class="page">
+    <div class="head arrive" data-i="0">
+      <div class="back"><svg width="11" height="19" viewBox="0 0 12 20"><path d="M10 2 2 10l8 8" stroke="#000000" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <b>Record</b><span id="today"></span>
+    </div>
+    <div class="avg arrive" data-i="1">
+      <div class="k">Average</div>
+      <div class="big" id="big"></div>
+      <div class="row">
+        <div><span>This month</span><b id="thisMonth"></b></div>
+        <div><span id="lastLabel"></span><b id="lastMonth"></b></div>
+        <div><span>Best</span><b id="best"></b></div>
+      </div>
+    </div>
+    <div class="month arrive" data-i="2">
+      <div class="mhead">
+        <div class="mtitle" id="mtitle"></div>
+        <div class="arrows">
+          <button id="prev" aria-label="Previous month"><svg width="11" height="19" viewBox="0 0 12 20"><path d="M10 2 2 10l8 8" stroke="#000000" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <button id="next" aria-label="Next month"><svg width="11" height="19" viewBox="0 0 12 20"><path d="m2 2 8 8-8 8" stroke="#000000" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </div>
+      </div>
+      <div class="cal" id="cal"></div>
+    </div>
+  </div>
+  <div class="dim" id="dim"></div>
+  <div class="sheet" id="sheet">
+    <div class="rowx">
+      <canvas class="thumb" id="thumb" width="112" height="112"></canvas>
+      <div class="when"><b id="sDate"></b><span id="sLine"></span></div>
+      <button class="x" id="close" aria-label="Close"><svg width="12" height="12" viewBox="0 0 12 12"><path d="m1.5 1.5 9 9m0-9-9 9" stroke="#000000" stroke-width="2.3" stroke-linecap="round"/></svg></button>
+    </div>
+    <button class="see" id="see">See the crossword</button>
+  </div>
+</div>
+
+<div class="legend" id="legend"><span><i style="background:var(--gold)"></i>Solved</span><span><i style="background:var(--helped)"></i>With help</span><span><i style="background:var(--parcel)"></i>Missed</span></div>
+<script src="iow-haptics.js"></script>
+<script>
+const W = 402, H = 874, device = document.getElementById('device');
+let scale = 1;
+function fit() {
+  // 48 above the app, as in the other demos; the key sits centred in the space
+  // underneath, on the grey, not in the app.
+  const TOP = 48, UNDER = 80;
+  scale = Math.min(1, (innerWidth - 48) / W, (innerHeight - TOP - UNDER) / H);
+  const top = Math.max(TOP, (innerHeight - UNDER - H * scale) / 2);
+  Object.assign(device.style, { position: 'absolute', transformOrigin: '0 0', transform: `scale(${scale})`, left: (innerWidth - W * scale) / 2 + 'px', top: top + 'px' });
+  const legend = document.getElementById('legend');
+  if (legend) { const below = top + H * scale; legend.style.top = (below + (innerHeight - below - legend.offsetHeight) / 2) + 'px'; }
+}
+addEventListener('resize', fit); addEventListener('DOMContentLoaded', fit); fit();
+
+/* ---------- The app's springs ---------- */
+function springAt(t, response, damping) {
+  if (t <= 0) return 0;
+  const w0 = 2 * Math.PI / response, z = damping;
+  if (z >= 1) return 1 - Math.exp(-w0 * t) * (1 + w0 * t);
+  const wd = w0 * Math.sqrt(1 - z * z);
+  return 1 - Math.exp(-z * w0 * t) * (Math.cos(wd * t) + (z * w0 / wd) * Math.sin(wd * t));
+}
+function animate({ response, damping, delay = 0, onUpdate, onDone }) {
+  const start = performance.now() + delay * 1000; let raf, live = true;
+  const step = now => { if (!live) return; const t = (now - start) / 1000, v = springAt(t, response, damping); onUpdate(t < 0 ? 0 : v);
+    if (t > 0.05 && ((t > response * 0.6 && Math.abs(1 - v) < 0.0008) || t > 4)) { onUpdate(1); onDone && onDone(); return; } raf = requestAnimationFrame(step); };
+  raf = requestAnimationFrame(step); return () => { live = false; cancelAnimationFrame(raf); };
+}
+const byBounce = (d, b) => ({ response: d, damping: 1 - b });
+
+/* ---------- Sound (SoundBank) ----------
+   The same synths the board demo uses, cut to the moments this screen has:
+   a tick when the month changes, and a two-tone pair for a day's panel
+   coming up and going back down. ---------- */
+const RATE = 44100;
+let actx = null;
+const bufCache = {};
+function audio() { if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } if (actx && actx.state === 'suspended') actx.resume(); return actx; }
+addEventListener('pointerdown', audio, { capture: true });
+const sine = (f, t) => t < 0 ? 0 : Math.sin(2 * Math.PI * f * t);
+const env = (t, d) => t < 0 ? 0 : Math.exp(-t * d);
+function synth(seconds, fn) {
+  const ctx = audio(); if (!ctx) return null;
+  const n = Math.floor(seconds * RATE), buf = ctx.createBuffer(1, n, RATE), out = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) { const t = i / RATE; out[i] = fn(t) * Math.min(1, (seconds - t) / 0.003); }
+  return buf;
+}
+const SOUNDS = {
+  /* The month stepping over: one short tick, as on the board. */
+  select: () => synth(0.05, t => sine(1250, t) * env(t, 140) * 0.14),
+  /* A day opening: two notes, the second a fifth up, as the panel rises. */
+  open: () => synth(0.13, t => sine(1050, t) * env(t, 170) * 0.11 + sine(1570, t - 0.05) * env(t - 0.05, 150) * 0.095),
+  /* And going back down: the same pair the other way round, and softer. */
+  close: () => synth(0.12, t => sine(1570, t) * env(t, 180) * 0.075 + sine(1050, t - 0.045) * env(t - 0.045, 160) * 0.07),
+};
+
+/* The page around this demo owns the sound switch: it posts in, we obey. */
+let muted = false;
+addEventListener('message', (e) => { if (e.data && e.data.type === 'iow-mute') muted = !!e.data.muted; });
+
+function play(name) {
+  const ctx = audio(); if (!ctx || muted) return;
+  const buf = bufCache[name] || (bufCache[name] = SOUNDS[name]()); if (!buf) return;
+  const src = ctx.createBufferSource(), gain = ctx.createGain();
+  gain.gain.value = 0.8; src.buffer = buf; src.connect(gain).connect(ctx.destination); src.start();
+}
+const tick = () => play('select');
+
+/* The app's own haptic patterns live in iow-haptics.js. */
+const haptic = window.iowHaptic;
+
+/* ---------- A made-up record: about four months of mornings ---------- */
+const today = new Date(); today.setHours(0, 0, 0, 0);
+const dayMs = 86400000;
+const keyOf = d => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+const ago = d => Math.round((today - d) / dayMs);
+const rec = {};
+for (let n = 1; n <= 150; n++) {
+  const d = new Date(today - n * dayMs);
+  // A good run: every day for the last five weeks, with the odd miss before that.
+  const missed = n > 36 && (n % 9 === 4 || n % 13 === 6 || n % 11 === 3);
+  if (missed) continue;
+  const helped = n % 6 === 0 || n % 5 === 2;
+  const seconds = Math.round(210 + ((n * 37) % 140) + n * 0.4 - (helped ? 0 : 20));
+  rec[keyOf(d)] = { date: d, seconds, helped, hints: helped ? 1 + (n % 3) : 0, checks: helped && n % 4 === 0 ? 1 : 0, seed: n };
+}
+// Today's isn't done yet, and the streak runs back from yesterday.
+let streak = 0; for (let n = 1; rec[keyOf(new Date(today - n * dayMs))]; n++) streak++;
+const fmt = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+const median = a => { const s = [...a].sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : null; };
+const inMonth = (m) => Object.values(rec).filter(r => r.date.getMonth() === m.getMonth() && r.date.getFullYear() === m.getFullYear()).map(r => r.seconds);
+const thisM = new Date(today.getFullYear(), today.getMonth(), 1), lastM = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+const recent = Object.values(rec).filter(r => ago(r.date) <= 90).map(r => r.seconds);
+const average = median(recent);
+document.getElementById('today').textContent = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+document.getElementById('thisMonth').textContent = fmt(median(inMonth(thisM)) ?? average);
+document.getElementById('lastLabel').textContent = lastM.toLocaleDateString('en-US', { month: 'long' });
+document.getElementById('lastMonth').textContent = fmt(median(inMonth(lastM)) ?? average);
+document.getElementById('best').textContent = fmt(Math.min(...Object.values(rec).filter(r => !r.helped).map(r => r.seconds)));
+const big = document.getElementById('big');
+big.innerHTML = [...fmt(average)].map(ch => `<i>${ch}</i>`).join('');
+
+/* ---------- The page arrives (Arrive): each block rises 20pt from 94%, 0.035s apart,
+   and the average's figures pop up one after another (AverageCard). ---------- */
+function arrive() {
+  document.querySelectorAll('.arrive').forEach(el => {
+    const i = +el.dataset.i;
+    el.style.transform = 'translateY(20px) scale(.94)';
+    animate({ response: 0.38, damping: 0.88, delay: i * 0.035, onUpdate: v => el.style.transform = `translateY(${20 * (1 - v)}px) scale(${.94 + .06 * v})` });
+  });
+  [...big.children].forEach((el, k) => {
+    el.style.opacity = 0; el.style.transform = 'translateY(10px) scale(.55)';
+    animate({ response: 0.42, damping: 0.58, delay: k * 0.04, onUpdate: v => {
+      el.style.opacity = Math.min(1, Math.max(0, v)); el.style.transform = `translateY(${10 * (1 - v)}px) scale(${.55 + .45 * v})`;
+    } });
+  });
+}
+// Plays when it scrolls into view, so a reader sees it.
+let played = false;
+new IntersectionObserver(es => { if (es.some(e => e.isIntersecting) && !played) { played = true; arrive(); } }, { threshold: 0.3 }).observe(device);
+if (window.top === window) { played = true; arrive(); }
+
+/* ---------- The month ---------- */
+let back = 0;
+const cal = document.getElementById('cal'), mtitle = document.getElementById('mtitle');
+function monthAt(b) { return new Date(today.getFullYear(), today.getMonth() - b, 1); }
+function pastLine(first, days) {
+  let run = 0, best = 0, solved = 0;
+  for (let d = 1; d <= days; d++) { const r = rec[keyOf(new Date(first.getFullYear(), first.getMonth(), d))]; run = r ? run + 1 : 0; best = Math.max(best, run); if (r) solved++; }
+  return best >= 2 ? `${best} days in a row` : `${solved} solved`;
+}
+const OLDEST = 2;  // this month and the two before it
+const STEP = 402;   // one screen: each month sits exactly a screen from the next
+const names = [], pages = [];
+let pos = 0, calH = 0, moveStop;
+function rowsOf(b) { const f = monthAt(b), days = new Date(f.getFullYear(), f.getMonth() + 1, 0).getDate(); return Math.ceil(((f.getDay() + 6) % 7 + days) / 7); }
+function heightOf(b) { const side = (cal.clientWidth - 48) / 7; return rowsOf(b) * (side + 8) - 8; }
+function place() {
+  // Later months lie to the right; name and days share one position, so they move as one sheet.
+  for (let m = 0; m <= OLDEST; m++) { const t = `translateX(${(pos - m) * STEP}px)`; names[m].style.transform = t; pages[m].style.transform = t; }
+  cal.style.height = calH + 'px';
+}
+function renderMonth() {
+  for (let b = 0; b <= OLDEST; b++) {
+    const first = monthAt(b), days = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
+    const lead = (first.getDay() + 6) % 7;  // Monday first
+    const name = document.createElement('div'); name.className = 'mname';
+    name.innerHTML = '<b></b><span></span>';
+    name.querySelector('b').textContent = first.toLocaleDateString('en-US', first.getFullYear() === today.getFullYear() ? { month: 'long' } : { month: 'long', year: 'numeric' });
+    name.querySelector('span').textContent = b === 0 ? (streak === 1 ? '1 day in a row' : `${streak} days in a row`) : pastLine(first, days);
+    mtitle.appendChild(name); names[b] = name;
+    const page = document.createElement('div'); page.className = 'calpage';
+    for (let i = 0; i < lead; i++) page.insertAdjacentHTML('beforeend', '<div class="day blank"></div>');
+    for (let d = 1; d <= days; d++) {
+      const date = new Date(first.getFullYear(), first.getMonth(), d), r = rec[keyOf(date)];
+      const a = Math.round((date - today) / dayMs);
+      const el = document.createElement('div');
+      el.className = 'day' + (r ? ' done' : '') + (r && r.helped ? ' helped' : '') + (a > 0 ? ' ahead' : '') + (a === 0 ? ' today' : '');
+      el.textContent = d;
+      if (a <= 0) press(el, () => openDay(date, r));
+      page.appendChild(el);
+    }
+    cal.appendChild(page); pages[b] = page;
+  }
+  calH = heightOf(0);
+  syncArrows(); place();
+}
+function syncArrows() {
+  document.getElementById('next').classList.toggle('off', back === 0);
+  document.getElementById('prev').classList.toggle('off', back === OLDEST);
+  pages.forEach((p, m) => { p.style.pointerEvents = m === back ? '' : 'none'; });
+}
+function step(by) {
+  const to = Math.min(OLDEST, Math.max(0, back + by));
+  if (to === back) return;
+  back = to; tick(); haptic('select'); syncArrows();
+  // Interrupts cleanly: a quick second tap carries on from wherever the sheet has got to.
+  moveStop && moveStop();
+  const fromPos = pos, fromH = calH, toH = heightOf(back);
+  moveStop = animate({ response: 0.38, damping: 0.92, onUpdate: v => { pos = fromPos + (back - fromPos) * v; calH = fromH + (toH - fromH) * v; place(); } });
+}
+/* Pull the sheet sideways with a finger or the mouse; a flick counts for where it was heading. */
+let pull = null, justPulled = false;
+cal.addEventListener('pointerdown', e => { pull = { id: e.pointerId, x: e.clientX, y: e.clientY, on: false, lastX: e.clientX, lastT: e.timeStamp, v: 0 }; });
+addEventListener('pointermove', e => {
+  if (!pull || e.pointerId !== pull.id) return;
+  const dx = (e.clientX - pull.x) / scale, dy = (e.clientY - pull.y) / scale;
+  if (!pull.on) {
+    if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+    if (Math.abs(dy) > Math.abs(dx)) { pull = null; return; }
+    pull.on = true; moveStop && moveStop(); pull.from = pos;
+    pull.x = e.clientX; pull.fromH = calH;
+    return;
+  }
+  const dt = e.timeStamp - pull.lastT;
+  if (dt > 0) pull.v = 0.7 * ((e.clientX - pull.lastX) / scale / dt * 1000) + 0.3 * pull.v;
+  pull.lastX = e.clientX; pull.lastT = e.timeStamp;
+  let p = pull.from + dx / STEP;
+  // Nothing beyond the ends, so the sheet resists instead of following.
+  if (p < 0) p *= 0.25; else if (p > OLDEST) p = OLDEST + (p - OLDEST) * 0.25;
+  pos = p;
+  const near = Math.min(OLDEST, Math.max(0, p)), a = Math.floor(near), b = Math.min(OLDEST, a + 1);
+  calH = heightOf(a) + (heightOf(b) - heightOf(a)) * (near - a);
+  place();
+});
+function endPull(e) {
+  if (!pull || e.pointerId !== pull.id) return;
+  const was = pull; pull = null;
+  if (!was.on) return;
+  justPulled = true; setTimeout(() => { justPulled = false; }, 0);
+  const to = Math.min(OLDEST, Math.max(0, Math.round(pos + was.v * 0.15 / STEP)));
+  if (to !== back) { back = to; tick(); haptic('select'); syncArrows(); }
+  const fromPos = pos, fromH = calH, toH = heightOf(back);
+  moveStop = animate({ response: 0.38, damping: 0.92, onUpdate: v => { pos = fromPos + (back - fromPos) * v; calH = fromH + (toH - fromH) * v; place(); } });
+}
+addEventListener('pointerup', endPull); addEventListener('pointercancel', endPull);
+// A pull that ends over a day isn't a tap on it.
+cal.addEventListener('click', e => { if (justPulled) e.stopPropagation(); }, true);
+document.getElementById('prev').addEventListener('click', () => step(1));
+document.getElementById('next').addEventListener('click', () => step(-1));
+
+/* Days give the instant a finger lands (PressableCard). */
+function press(el, action) {
+  let scale = 1, stop;
+  const to = (t, spec) => { stop && stop(); const f = scale; stop = animate({ ...spec, onUpdate: v => { scale = f + (t - f) * v; el.style.transform = `scale(${scale})`; } }); };
+  el.addEventListener('pointerdown', () => to(0.97, byBounce(0.16, 0.2)));
+  const up = () => to(1, byBounce(0.3, 0.35));
+  el.addEventListener('pointerup', up); el.addEventListener('pointerleave', up); el.addEventListener('pointercancel', up);
+  el.addEventListener('click', action);
+}
+
+/* ---------- A day's sitting, in a panel from the bottom (DayCard) ---------- */
+const sheet = document.getElementById('sheet'), dim = document.getElementById('dim');
+let sheetStop, sheetOpen = false, sheetP = 0;
+const templates = [
+  ['#....##', '#.....#', '.....#.', '...#...', '.#.....', '......#', '##.....'],
+  ['...#...', '....#..', '##.....', '.....#.', '#......', '..#....', '...##.#'],
+  ['#...#..', '.......', '..#....', '....#.#', '.#.....', '....#..', '##.....'],
+  ['....###', '.....#.', '#......', '...#...', '.....##', '#......', '...#...'],
+];
+function drawThumb(seed) {
+  const c = document.getElementById('thumb'), g = c.getContext('2d'), rows = templates[seed % templates.length], n = 7, gap = 3, cell = (112 - gap * (n + 1)) / n;
+  g.fillStyle = '#000000'; g.fillRect(0, 0, 112, 112); g.fillStyle = '#fff';
+  for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) if (rows[r][k] !== '#') g.fillRect(gap + k * (cell + gap), gap + r * (cell + gap), cell, cell);
+}
+function openDay(date, r) {
+  document.getElementById('sDate').textContent = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+  if (r) {
+    const bits = []; if (r.hints) bits.push(r.hints === 1 ? '1 hint' : `${r.hints} hints`); if (r.checks) bits.push('1 check');
+    document.getElementById('sLine').textContent = `${fmt(r.seconds)} · ${bits.length ? bits.join(' · ') : 'No hints'}`;
+  } else {
+    document.getElementById('sLine').textContent = ago(date) === 0 ? 'Not solved yet' : 'Not solved';
+  }
+  document.getElementById('see').textContent = r ? 'See the crossword' : (ago(date) === 0 ? 'Play today’s' : 'Play it now');
+  drawThumb(r ? r.seed : date.getDate());
+  setSheet(true);
+}
+const pageEl = document.querySelector('.page');
+pageEl.style.transformOrigin = '50% 0';
+function setSheet(open) {
+  if (open === sheetOpen) return;
+  sheetOpen = open;
+  play(open ? 'open' : 'close'); haptic(open ? 'flip' : 'delete');
+  sheetStop && sheetStop();
+  const from = sheetP;
+  dim.style.pointerEvents = open ? 'auto' : 'none';
+  // Up with a little life; away quick and clean.
+  sheetStop = animate({ ...(open ? { response: 0.42, damping: 0.8 } : { response: 0.28, damping: 1 }), onUpdate: v => {
+    const p = sheetP = from + ((open ? 1 : 0) - from) * v;
+    sheet.style.transform = `translateY(${(1 - p) * 110}%)`; dim.style.opacity = Math.max(0, Math.min(1, p));
+    pageEl.style.transform = `scale(${1 - 0.03 * p})`;
+  } });
+}
+dim.addEventListener('click', () => setSheet(false));
+document.getElementById('close').addEventListener('click', () => setSheet(false));
+document.getElementById('see').addEventListener('click', () => setSheet(false));
+
+renderMonth();
+</script>
+</body>
+</html>

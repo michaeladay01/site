@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>In Other Words — make one</title>
+<style>
+  :root {
+    --paper: #FFFFFF; --ink: #000000; --gold: #E8B93C; --parcel: #E5E3DA; --box: #F1F0EC;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --mono: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+  body { font-family: var(--font); -webkit-font-smoothing: antialiased; }
+  .device {
+    width: 402px; height: 874px; background: var(--paper); overflow: hidden; color: var(--ink);
+    border-radius: 28px; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 12px 40px rgba(0,0,0,.08);
+  }
+  .status { position: absolute; inset: 0 0 auto 0; height: 54px; z-index: 50; pointer-events: none; }
+  .status .time { position: absolute; left: 48px; top: 19px; font: 600 17px var(--font); letter-spacing: -.2px; }
+  .status .island { position: absolute; left: 50%; top: 11px; width: 126px; height: 37px; margin-left: -63px; background: #000; border-radius: 20px; }
+  .status .right { position: absolute; right: 34px; top: 21px; display: flex; gap: 6px; align-items: center; }
+  .status .batt { width: 27px; height: 13px; border-radius: 4px; border: 1.5px solid rgba(0,0,0,.4); padding: 1.5px; }
+  .status .batt i { display: block; height: 100%; width: 100%; background: var(--ink); border-radius: 2px; }
+
+  .page { position: absolute; inset: 54px 0 0 0; display: flex; flex-direction: column; }
+  .head { flex: none; height: 56px; display: flex; align-items: center; padding: 0 16px; position: relative; }
+  .head .titles { position: absolute; left: 0; right: 0; text-align: center; pointer-events: none; }
+  .head .titles b { display: block; font: 600 19px/1.2 var(--font); }
+  .head .titles span { display: block; font: 400 19px/1.2 var(--font); color: rgba(0,0,0,.5); }
+  .icon { width: 40px; height: 40px; display: grid; place-items: center; cursor: pointer; position: relative; z-index: 1; }
+  .head .more { margin-left: auto; }
+
+  .band { flex: none; height: 0; overflow: hidden; background: #000; margin-top: 8px; position: relative; }
+  .board { position: absolute; left: 50%; top: 14px; }
+  .ptile { position: absolute; background: #fff; display: grid; place-items: center; font-weight: 500; will-change: transform, opacity, left, top; }
+  .grip { flex: none; height: 10px; display: flex; align-items: center; justify-content: center; cursor: grab; touch-action: none; }
+  .grip i { width: 40px; height: 5px; border-radius: 3px; background: rgba(0,0,0,.25); opacity: 0; }
+
+  .scroll { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 20px 20px 0; scrollbar-width: none; }
+  .scroll::-webkit-scrollbar { display: none; }
+  .label { display: flex; align-items: baseline; margin-bottom: 12px; }
+  .label b { font: 600 24px var(--font); flex: 1; }
+  .label span { font: 400 15px var(--mono); opacity: .5; font-variant-numeric: tabular-nums; }
+  .stack { position: relative; }
+  #inner { will-change: transform; }
+  .scroll { cursor: grab; user-select: none; -webkit-user-select: none; }
+  .scroll:active { cursor: grabbing; }
+  .card {
+    position: absolute; left: 0; right: 0; height: 120px; border-radius: 6px; background: var(--gold);
+    padding: 12px 20px 0; color: rgba(17,17,17,.78); display: flex; gap: 14px; align-items: baseline;
+    box-shadow: 0 -1px 0 rgba(0,0,0,.12), 0 -3px 14px rgba(0,0,0,.1);
+  }
+  .card { transition: box-shadow .3s; cursor: pointer; top: 0; will-change: transform; }
+  .card.up { box-shadow: 0 12px 28px rgba(0,0,0,.2); }
+  .card .x { position: absolute; right: 12px; top: 12px; width: 28px; height: 28px; border-radius: 50%; background: #000; display: grid; place-items: center; transform: scale(.2); opacity: 0; transition: transform .25s cubic-bezier(.3,1.4,.5,1), opacity .15s; pointer-events: none; }
+  .card.up .x { transform: scale(1); opacity: 1; pointer-events: auto; }
+  .card.up .ans span { opacity: 0; }
+  .card .num { display: none; }
+  .card .body { flex: 1; min-width: 0; }
+  .card .ans { display: flex; align-items: baseline; }
+  .card .ans b { flex: 1; font: 700 32px var(--font); letter-spacing: -0.6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card .ans span { font: 400 13px var(--mono); opacity: .45; margin-left: 8px; white-space: nowrap; }
+  .card .clue { font: 700 22px var(--font); opacity: .5; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hint { text-align: center; font: 400 19px/1.4 var(--font); color: rgba(0,0,0,.45); padding: 100px 24px; }
+
+  .foot { flex: none; padding: 0 20px 34px; display: flex; flex-direction: column; gap: 14px; }
+  .composer { background: var(--parcel); border-radius: 6px; padding: 18px 20px; display: flex; align-items: center; gap: 12px; }
+  .composer .fields { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .composer input { all: unset; width: 100%; color: var(--ink); }
+  .composer input.a { font: 700 20px var(--font); text-transform: uppercase; }
+  .composer input.c { font: 400 15px var(--font); color: rgba(0,0,0,.6); }
+  .composer input::placeholder { color: rgba(0,0,0,.35); }
+  .send { width: 44px; height: 44px; border-radius: 50%; background: rgba(0,0,0,.18); display: grid; place-items: center; cursor: pointer; transition: background .2s; flex: none; border: 0; }
+  .send.on { background: #000; }
+  .add { height: 48px; border-radius: 6px; background: var(--box); display: none; align-items: center; justify-content: center; gap: 8px; font: 600 16px var(--font); cursor: pointer; }
+  .main { height: 58px; border-radius: 999px; display: flex; align-items: center; justify-content: center; gap: 10px; font: 600 18px var(--font); cursor: pointer; transition: background .2s, color .2s; background: var(--parcel); color: rgba(0,0,0,.35); border: 0; }
+  .main.on { background: #000; color: #fff; }
+  .main, .send, .add { outline: none; -webkit-appearance: none; appearance: none; }
+  .main:focus, .send:focus, .main:focus-visible, .send:focus-visible { outline: none; box-shadow: none; }
+  .needs { text-align: center; font: 600 13px var(--font); opacity: .65; margin-top: -4px; }
+  /* The flying card. The box morphs; its contents do not. A skin laid out at
+     the destination's own width sits inside and is clipped by the box, so the
+     words never reflow mid-flight and never jump at the end — animating the
+     width and padding of the text's own container is what made them readjust. */
+  .morph { position: absolute; z-index: 40; pointer-events: none; overflow: hidden; padding: 0; }
+  .morph .skin {
+    position: absolute; left: 0; top: 0; box-sizing: border-box;
+    padding: 12px 20px 0; color: rgba(17,17,17,.78);
+    display: flex; gap: 14px; align-items: baseline;
+  }
+</style>
+</head>
+<body>
+<div class="device" id="device">
+  <div class="status">
+    <div class="time">9:41</div><div class="island"></div>
+    <div class="right">
+      <svg width="18" height="12" viewBox="0 0 18 12"><path fill="#000000" d="M9 2.6c2.4 0 4.6.9 6.3 2.5l1.3-1.3A10.7 10.7 0 0 0 9 .7C6.1.7 3.5 1.8 1.4 3.8l1.3 1.3A8.8 8.8 0 0 1 9 2.6Zm0 3.7c1.4 0 2.7.5 3.7 1.4l1.3-1.3A7.1 7.1 0 0 0 9 4.4c-1.9 0-3.6.7-5 2l1.3 1.3c1-.9 2.3-1.4 3.7-1.4Zm0 3.5L11.2 7.6A3.2 3.2 0 0 0 9 8.4c-.8 0-1.6.3-2.2.8L9 11.4Z"/></svg>
+      <div class="batt"><i></i></div>
+    </div>
+  </div>
+  <div class="page">
+    <div class="head">
+      <div class="icon"><svg width="12" height="20" viewBox="0 0 12 20"><path d="M10 2 2 10l8 8" stroke="#000000" stroke-width="2.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="titles"><b>Make one</b><span>A crossword for someone</span></div>
+      <div class="icon more" id="restart" title="Start over"><svg width="18" height="4" viewBox="0 0 18 4"><circle cx="2" cy="2" r="2"/><circle cx="9" cy="2" r="2"/><circle cx="16" cy="2" r="2"/></svg></div>
+    </div>
+    <div class="band" id="band"><div class="board" id="board"></div></div>
+    <div class="grip" id="grip"><i></i></div>
+    <div class="scroll" id="scroll"><div id="inner">
+      <div class="label"><b>Your words</b><span id="count">0 of 3</span></div>
+      <div class="hint" id="hint">Type a word and its clue in the box below.</div>
+      <div class="stack" id="stack"></div>
+      <div style="height: 14px"></div>
+    </div></div>
+    <div class="foot">
+      <div class="composer" id="composer">
+        <div class="fields">
+          <input class="a" id="answer" placeholder="NEW WORD" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="11">
+          <input class="c" id="clue" placeholder="Its clue" autocomplete="off" maxlength="60">
+        </div>
+        <button class="send" id="sendWord" aria-label="Add word"><svg width="16" height="18" viewBox="0 0 16 18"><path d="M8 16V2M2 8l6-6 6 6" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+      <div class="add" id="addWord"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="#000000" stroke-width="2.2" stroke-linecap="round"/></svg>Add word</div>
+      <button class="main" id="main"><span id="mainLabel">Build it</span></button>
+      <div class="needs" id="needs"></div>
+    </div>
+  </div>
+</div>
+
+<script src="iow-generator.js"></script>
+<script>
+const W = 402, H = 874;
+const device = document.getElementById('device');
+let scale = 1;
+function fit() {
+  scale = Math.min(1, (innerWidth - 48) / W, (innerHeight - 96) / H);
+  Object.assign(device.style, { position: 'absolute', transformOrigin: '0 0', transform: `scale(${scale})`,
+    left: (innerWidth - W * scale) / 2 + 'px', top: (innerHeight - H * scale) / 2 + 'px' });
+}
+addEventListener('resize', fit); fit();
+// A rect inside the phone, in its own unscaled points.
+function local(el) {
+  const d = device.getBoundingClientRect(), r = el.getBoundingClientRect();
+  return { x: (r.left - d.left) / scale, y: (r.top - d.top) / scale, w: r.width / scale, h: r.height / scale };
+}
+
+/* ---------- The app's springs ---------- */
+function springAt(t, response, damping) {
+  if (t <= 0) return 0;
+  const w0 = 2 * Math.PI / response, z = damping;
+  if (z >= 1) return 1 - Math.exp(-w0 * t) * (1 + w0 * t);
+  const wd = w0 * Math.sqrt(1 - z * z);
+  return 1 - Math.exp(-z * w0 * t) * (Math.cos(wd * t) + (z * w0 / wd) * Math.sin(wd * t));
+}
+function animate({ response, damping, delay = 0, onUpdate, onDone }) {
+  const start = performance.now() + delay * 1000;
+  let raf, live = true;
+  const step = now => {
+    if (!live) return;
+    const t = (now - start) / 1000, v = springAt(t, response, damping);
+    onUpdate(t < 0 ? 0 : v);
+    if (t > 0.05 && ((t > response * 0.6 && Math.abs(1 - v) < 0.0008) || t > 4)) { onUpdate(1); onDone && onDone(); return; }
+    raf = requestAnimationFrame(step);
+  };
+  raf = requestAnimationFrame(step);
+  return () => { live = false; cancelAnimationFrame(raf); };
+}
+
+/* ---------- Sound, from the app's SoundBank ---------- */
+const RATE = 44100; let actx = null; const bufs = {};
+function audio() {
+  if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+  if (actx && actx.state === 'suspended') actx.resume();
+  return actx;
+}
+addEventListener('pointerdown', audio, { capture: true }); addEventListener('keydown', audio, { capture: true });
+const sine = (f, t) => t < 0 ? 0 : Math.sin(2 * Math.PI * f * t);
+const env = (t, d) => t < 0 ? 0 : Math.exp(-t * d);
+const attack = (t, s) => t < 0 ? 0 : Math.min(1, t / s);
+const bell = (f, t, d) => t < 0 ? 0 : (Math.sin(2*Math.PI*f*t) + .28*Math.sin(2*Math.PI*f*2*t) + .08*Math.sin(2*Math.PI*f*3*t)) * attack(t, .004) * Math.exp(-t * d);
+function synth(seconds, fn) {
+  const ctx = audio(); if (!ctx) return null;
+  const n = Math.floor(seconds * RATE), buf = ctx.createBuffer(1, n, RATE), out = buf.getChannelData(0);
+  let seed = 0x9E3779B9 >>> 0, sm = 0;
+  for (let i = 0; i < n; i++) {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    sm += ((seed / 4294967295 * 2 - 1) - sm) * 0.35;
+    const t = i / RATE; out[i] = fn(t, sm) * Math.min(1, (seconds - t) / 0.003);
+  }
+  return buf;
+}
+const SOUNDS = {
+  select: () => synth(0.05, t => sine(1250, t) * env(t, 140) * 0.14),
+  flip: () => synth(0.11, t => sine(1100, t) * env(t, 160) * .13 + sine(1480, t - .045) * env(t - .045, 160) * .11),
+  // "Pop and sparkle": the add sound picked in the app's sound lab, also played on send.
+  add: () => synth(0.45, t => sine(520 + 700 * Math.exp(-t * 45), t) * attack(t, .002) * env(t, 30) * .32
+    + (bell(1568, t - .07, 16) + bell(2093, t - .13, 14) + bell(2637, t - .19, 12)) * .09),
+  key: () => synth(0.03, (t, n) => n * env(t, 400) * .05 + sine(2200, t) * env(t, 500) * .03),
+};
+function play(name) {
+  const ctx = audio(); if (!ctx) return;
+  const buf = bufs[name] || (bufs[name] = SOUNDS[name]()); if (!buf) return;
+  const s = ctx.createBufferSource(), g = ctx.createGain(); g.gain.value = .8; s.buffer = buf; s.connect(g).connect(ctx.destination); s.start();
+}
+/* Haptics, as far as a browser goes: Android vibrates, iPhone Safari gets its one light tick. */
+const hs = (() => { const l = document.createElement('label'), i = document.createElement('input'); i.type = 'checkbox'; i.setAttribute('switch', ''); l.style.cssText = 'position:fixed;left:-9999px;opacity:0;pointer-events:none'; l.appendChild(i); document.body.appendChild(l); return l; })();
+function haptic(ms = 8) { if (navigator.vibrate && (!navigator.userActivation || navigator.userActivation.hasBeenActive)) { try { navigator.vibrate(ms); return; } catch (e) {} } try { hs.click(); } catch (e) {} }
+
+/* ---------- Pulling past the top fans the cards apart (WordStack) ----------
+   The pull is eased (140 · (1 − e^(−pull/140))); each card then trails a little
+   further than the one above it, peek + spread · (0.5 + 0.12 · i), and the
+   bounce back closes them, like Wallet. */
+/* ---------- Tap a card and it lifts to the front (WordStack) ----------
+   It rises 6pt, grows to 1.03, sits above the rest on a softer, deeper shadow,
+   on a spring (response 0.3, damping 0.82); tap it again, or another, to swap. */
+let expanded = -1, tapped = true, downCard = null;
+const lifts = {};
+function liftCard(i, up) {
+  const el = document.getElementById('stack').children[i]; if (!el) return;
+  lifts[i] && lifts[i]();
+  const from = parseFloat(el.dataset.lift || 0), to = up ? 1 : 0;
+  el.classList.toggle('up', up);
+  el.style.zIndex = up ? 99 : i;
+  lifts[i] = animate({ response: 0.3, damping: 0.82, onUpdate: v => {
+    el.dataset.lift = from + (to - from) * v; poseCard(el);
+  } });
+}
+function toggleCard(i) {
+  const was = expanded;
+  if (was >= 0) liftCard(was, false);
+  expanded = was === i ? -1 : i;
+  if (expanded >= 0) liftCard(expanded, true);
+  play('select'); haptic(6);
+}
+function removeCard(i) {
+  cards.splice(i, 1); expanded = -1;
+  play('flip'); haptic(8);
+  renderStack();
+  if (built) { if (words().length >= 2) rebuild(); }
+}
+
+let pull = 0, stopPull = null;
+/* How far past its top an iPhone list actually moves for a finger travelling
+   `x`: UIScrollView's rubber band, (1 − 1 / (x · 0.55 / d + 1)) · d, with d the
+   height of the list. The app reads its overscroll from exactly this. */
+function rubber(x) { const d = document.getElementById('scroll').clientHeight || 500; return (1 - 1 / (x * 0.55 / d + 1)) * d; }
+function slotY(slot) {
+  // WordStack's own spread: 140 · (1 − e^(−overscroll/140)), and each card trails
+  // a little more than the one above it.
+  const over = rubber(pull), spread = 140 * (1 - Math.exp(-over / 140));
+  let y = 0;
+  for (let i = 0; i < slot; i++) y += PEEK + spread * (0.5 + 0.12 * i);
+  return y;
+}
+function poseCard(el) {
+  const k = parseFloat(el.dataset.lift || 0), y = parseFloat(el.dataset.y || 0);
+  el.style.transform = `translate3d(0, ${y - 6 * k}px, 0) scale(${1 + 0.03 * k})`;
+}
+function layoutStack() {
+  const stack = document.getElementById('stack');
+  [...stack.children].forEach((el, i) => { el.dataset.y = slotY(i); poseCard(el); });
+  // The list's height stays at rest while it's pulled, so nothing reflows mid-gesture.
+  const rest = cards.length ? (cards.length - 1) * PEEK + FRONT : 0;
+  stack.style.height = rest + 'px';
+  // The list itself is pulled down with the finger, as far as the rubber band lets it.
+  document.getElementById('inner').style.transform = `translate3d(0, ${rubber(pull)}px, 0)`;
+}
+function setPull(v) { pull = Math.max(0, v); layoutStack(); }
+function releasePull() {
+  // iOS's bounce back: quick, smooth, no overshoot.
+  stopPull && stopPull();
+  const from = pull;
+  if (from <= 0) return;
+  stopPull = animate({ response: 0.5, damping: 1, onUpdate: v => setPull(from * (1 - v)) });
+}
+
+/* ---------- The draft ---------- */
+const START = [
+  { answer: 'LATTE', clue: 'What you order, every single time' },
+  { answer: 'LISBON', clue: 'Our first trip together' },
+];
+let cards = [], built = false, adding = false, puzzle = null;
+const PEEK = 60, FRONT = 120;
+const $ = id => document.getElementById(id);
+const answerEl = $('answer'), clueEl = $('clue');
+
+function words() { return cards.map(c => ({ answer: c.answer.replace(/[^A-Z]/g, ''), clue: c.clue })).filter(w => w.answer.length > 1); }
+function missing() { const n = words().length; return n < 3 ? [`${3 - n} more word${3 - n === 1 ? '' : 's'}`] : []; }
+function cardHTML(c, i) {
+  return `<span class="num">${String(i + 1).padStart(2, '0')}</span><div class="body"><div class="ans"><b>${c.answer}</b><span>${c.answer.length} letters</span></div><div class="clue">${escapeHTML(c.clue)}</div></div>`;
+}
+function escapeHTML(s) { return s.replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch])); }
+function toEnd(smooth) {
+  const sc = document.getElementById('scroll');
+  sc.scrollTo({ top: sc.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+}
+new ResizeObserver(() => { if (!pull) toEnd(false); }).observe(document.getElementById('scroll'));
+function renderStack(hideLast = false) {
+  expanded = -1;
+  const stack = $('stack');
+  stack.innerHTML = '';
+  cards.forEach((c, i) => {
+    const el = document.createElement('div');
+    el.className = 'card'; el.style.zIndex = i; el.style.background = `color-mix(in srgb, var(--gold), #fff ${Math.min(60, (cards.length - 1 - i) * 12)}%)`;
+    el.innerHTML = cardHTML(c, i);
+    if (hideLast && i === cards.length - 1) el.style.visibility = 'hidden';
+    el.insertAdjacentHTML('beforeend', '<div class="x" role="button" aria-label="Remove word"><svg width="10" height="10" viewBox="0 0 10 10"><path d="m1 1 8 8M9 1 1 9" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg></div>');
+    el.querySelector('.x').addEventListener('click', e => { e.stopPropagation(); removeCard(i); });
+    el.addEventListener('click', () => { if (!tapped) return; toggleCard(i); });
+    stack.appendChild(el);
+  });
+  layoutStack();
+  $('hint').style.display = cards.length ? 'none' : '';
+  $('count').textContent = `${cards.length} of ${Math.max(3, cards.length)}`;
+  const m = missing(), ready = !m.length;
+  $('needs').textContent = ready ? '' : 'Still needs ' + m.join(' and ') + '.';
+  $('needs').style.display = ready ? 'none' : '';
+  requestAnimationFrame(() => toEnd(false));
+  $('main').classList.toggle('on', ready);
+}
+function composerReady() { return answerEl.value.replace(/[^a-z]/gi, '').length > 1 && clueEl.value.trim().length > 0; }
+function syncComposer() { $('sendWord').classList.toggle('on', composerReady()); }
+answerEl.addEventListener('input', () => { answerEl.value = answerEl.value.toUpperCase().replace(/[^A-Z]/g, ''); haptic(4); play('key'); syncComposer(); });
+clueEl.addEventListener('input', () => { haptic(4); play('key'); syncComposer(); });
+answerEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); clueEl.focus(); } });
+clueEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sendWord(); } });
+$('sendWord').addEventListener('click', sendWord);
+
+/* ---------- The box becomes the card (CardMorph) ----------
+   One gold shape travels from the box to the new card's slot on a spring
+   (response 0.42, damping 0.7), stretched a little along its flight. */
+function sendWord() {
+  if (!composerReady()) return;
+  const answer = answerEl.value.toUpperCase(), clue = clueEl.value.trim();
+  const from = local($('composer'));
+  cards.push({ answer, clue });
+  answerEl.value = ''; clueEl.value = ''; syncComposer();
+  $('composer').style.opacity = 0;
+  renderStack(true);
+  const scroller = $('scroll'); scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
+  play('add');
+  const ghost = document.createElement('div');
+  ghost.className = 'card morph';
+  ghost.style.background = $('stack').lastElementChild.style.background;
+  const skin = document.createElement('div');
+  skin.className = 'skin';
+  skin.innerHTML = cardHTML({ answer, clue }, cards.length - 1);
+  ghost.appendChild(skin);
+  device.appendChild(ghost);
+  const slot = () => local($('stack').lastElementChild);
+  const lerp = (a, b, t) => a + (b - a) * t;
+  // The destination is measured once, and the skin is laid out at it for the
+  // whole flight. It lands on exactly the geometry the real card will have, so
+  // swapping one for the other at the end moves nothing.
+  const dest = slot();
+  skin.style.width = dest.w + 'px';
+  skin.style.height = dest.h + 'px';
+  animate({ response: 0.42, damping: 0.7, onUpdate: p => {
+    const to = slot(), t = Math.min(1, Math.max(0, p));
+    Object.assign(ghost.style, { left: lerp(from.x, to.x, p) + 'px', top: lerp(from.y, to.y, p) + 'px',
+      width: lerp(from.w, to.w, p) + 'px', height: lerp(from.h, to.h, p) + 'px', right: 'auto',
+      transform: `scale(${1 - .015 * Math.sin(Math.PI * t)}, ${1 + .03 * Math.sin(Math.PI * t)})`, transformOrigin: 'bottom' });
+    // The skin stays anchored to the bottom of the box, which is where the
+    // card's own text sits once it has landed.
+    skin.style.top = (lerp(from.h, to.h, p) - dest.h) + 'px';
+    ghost.querySelector('.num').style.opacity = .45 * t;
+  }, onDone: () => { ghost.remove(); renderStack(); } });
+  setTimeout(() => haptic(10), 290);
+  setTimeout(() => { $('composer').style.transition = 'opacity .2s'; $('composer').style.opacity = 1; setTimeout(() => $('composer').style.transition = '', 220); }, 230);
+  if (built) { rebuild(); setTimeout(() => setAdding(false), 600); }
+  else answerEl.focus();
+}
+
+/* ---------- Build it ---------- */
+const LINE = 2, BAND_W = W - 48;
+const bandGrid = (() => { const side = (BAND_W - 8 * LINE) / 7; return 7 * side + 8 * LINE; })();
+const BAND_H = bandGrid + 28;
+const tiles = {};  // keyed by word, letter: "ANSWER#n#dir#i", so a word travels as one
+
+function layout(p) {
+  const side = Math.min((BAND_W - (p.cols + 1) * LINE) / p.cols, (bandGrid - (p.rows + 1) * LINE) / p.rows);
+  return { side, pitch: side + LINE, w: p.cols * side + (p.cols + 1) * LINE, h: p.rows * side + (p.rows + 1) * LINE };
+}
+function tileList(p) {
+  const seen = {}, out = [];
+  p.entries.forEach((e, w) => {
+    const n = seen[e.answer] = (seen[e.answer] ?? -1) + 1;
+    [...e.answer].forEach((ch, i) => out.push({ id: `${e.answer}#${n}#${e.direction}#${i}`, row: e.row + (e.direction === 'down' ? i : 0), col: e.col + (e.direction === 'across' ? i : 0), ch, personal: !e.filler, i, w }));
+  });
+  return out;
+}
+function generate() {
+  return IOW.generatePuzzle(words(), { recipient: 'you', message: '' }, { attempts: 60, seed: 1 });
+}
+function place(p, deal) {
+  const L = layout(p), board = $('board');
+  board.style.width = L.w + 'px'; board.style.height = L.h + 'px';
+  board.style.marginLeft = -L.w / 2 + 'px';
+  board.style.top = (14 + (bandGrid - L.h) / 2) + 'px';
+  const next = tileList(p), keep = new Set(next.map(t => t.id));
+  for (const id in tiles) if (!keep.has(id)) {
+    const el = tiles[id]; delete tiles[id];
+    el.style.transition = 'opacity .2s'; el.style.opacity = 0; setTimeout(() => el.remove(), 220);
+  }
+  next.forEach(t => {
+    const x = LINE + t.col * L.pitch, y = LINE + t.row * L.pitch;
+    let el = tiles[t.id];
+    const fresh = !el;
+    if (fresh) { el = document.createElement('div'); el.className = 'ptile'; board.appendChild(el); tiles[t.id] = el; }
+    el.textContent = t.ch;
+    Object.assign(el.style, { width: L.side + 'px', height: L.side + 'px', fontSize: L.side * .56 + 'px', color: t.personal ? '#000' : 'rgba(0,0,0,.3)', zIndex: t.personal ? 2 : 1 });
+    if (deal) {
+      // Dealt in like the puzzle board: up from 1.4 squares below, at 70%, turned
+      // a little, springing in on a diagonal wave (0.25s + 0.03s per diagonal).
+      const spin = ((t.row * 7 + t.col * 13) % 11) - 5, rise = L.side * 1.4;
+      el.style.left = x + 'px'; el.style.top = y + 'px';
+      el.style.opacity = 0; el.style.transform = `translateY(${rise}px) scale(.7) rotate(${spin}deg)`;
+      animate({ response: 0.34, damping: 0.72, delay: 0.25 + (t.row + t.col) * 0.03, onUpdate: v => {
+        el.style.opacity = Math.min(1, v); el.style.transform = `translateY(${rise * (1 - v)}px) scale(${.7 + .3 * v}) rotate(${spin * (1 - v)}deg)`;
+      } });
+    } else if (fresh) {
+      // A word that's just found a home drops in and locks.
+      el.style.left = x + 'px'; el.style.top = y + 'px';
+      el.style.opacity = 0; el.style.transform = `translateY(${-L.pitch * .4}px) scale(.85)`;
+      animate({ response: 0.5, damping: 0.88, delay: t.i * 0.025, onUpdate: v => { el.style.opacity = v; el.style.transform = `translateY(${-L.pitch * .4 * (1 - v)}px) scale(${.85 + .15 * v})`; } });
+    } else {
+      // Words already in the grid slide to their new places, a letter at a time.
+      const fx = parseFloat(el.style.left), fy = parseFloat(el.style.top);
+      animate({ response: 0.5, damping: 0.88, delay: t.i * 0.025, onUpdate: v => { el.style.left = fx + (x - fx) * v + 'px'; el.style.top = fy + (y - fy) * v + 'px'; } });
+    }
+  });
+}
+function rebuild() {
+  const before = new Set((puzzle?.entries || []).filter(e => !e.filler).map(e => e.answer));
+  puzzle = generate(); place(puzzle, false);
+  if (puzzle.entries.some(e => !e.filler && !before.has(e.answer))) play('flip');
+}
+function build() {
+  puzzle = generate();
+  built = true;
+  folded = false; bandTo(BAND_H);
+  $('grip').style.height = '22px'; $('grip').querySelector('i').style.opacity = 1;
+  play('flip'); haptic(10);
+  place(puzzle, true);
+  // The building rumble: a tap for every diagonal as it lands, then one solid thud.
+  const diagonals = puzzle.rows + puzzle.cols - 1;
+  for (let d = 0; d < diagonals; d++) setTimeout(() => { haptic(6 + Math.round(10 * d / Math.max(1, diagonals - 1))); if (d % 2 === 0) play('select'); }, 300 + d * 30);
+  setTimeout(() => haptic(30), 300 + diagonals * 30 + 120);
+  setAdding(false);
+  $('mainLabel').innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" style="vertical-align:-2px;margin-right:8px"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z" fill="#fff" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg>Send it`;
+}
+function setAdding(on) {
+  adding = on;
+  $('composer').style.display = !built || on ? 'flex' : 'none';
+  $('addWord').style.display = built && !on ? 'flex' : 'none';
+  if (on) answerEl.focus();
+}
+$('addWord').addEventListener('click', () => setAdding(true));
+$('main').addEventListener('click', () => {
+  if (missing().length) return;
+  if (!built) { answerEl.blur(); clueEl.blur(); build(); return; }
+  // Sending: here, just the moment of it. The real one asks who it's for.
+  play('add'); haptic(12);
+  const m = $('main'); m.animate([{ transform: 'scale(1)' }, { transform: 'scale(.96)' }, { transform: 'scale(1)' }], { duration: 260, easing: 'ease-out' });
+  const label = $('mainLabel'), keep = label.innerHTML;
+  label.textContent = 'Sent'; setTimeout(() => label.innerHTML = keep, 1400);
+});
+/* ---------- The board folds away, and comes back ----------
+   One spring drives the band (response 0.42, damping 0.88), and any new move
+   picks up from wherever it is, so nothing fights. Drag the grip and the band
+   follows the finger; let go and it settles open or shut. Scrolling the words
+   up folds it too; pulling down at the top brings it back. */
+let folded = false, stopBand = null;
+const band = $('band');
+function bandH() { return parseFloat(band.style.height) || 0; }
+function bandTo(target, then) {
+  stopBand && stopBand();
+  const from = bandH();
+  stopBand = animate({ response: 0.42, damping: 0.88, onUpdate: v => band.style.height = Math.max(0, from + (target - from) * v) + 'px', onDone: then });
+}
+function setFolded(f) {
+  if (!built) return;
+  if (f !== folded) haptic(8);
+  folded = f; bandTo(f ? 0 : BAND_H);
+}
+const grip = $('grip');
+let drag = null;
+grip.addEventListener('pointerdown', e => {
+  if (!built) return;
+  stopBand && stopBand();
+  drag = { y: e.clientY, h: bandH(), moved: false };
+  grip.setPointerCapture(e.pointerId);
+});
+grip.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const dy = (e.clientY - drag.y) / scale;
+  if (Math.abs(dy) > 4) drag.moved = true;
+  // Follows the finger, with a little give past either end.
+  let h = drag.h + dy;
+  if (h > BAND_H) h = BAND_H + (h - BAND_H) * 0.25;
+  if (h < 0) h = 0;
+  band.style.height = h + 'px';
+});
+const endDrag = e => {
+  if (!drag) return;
+  const dy = (e.clientY - drag.y) / scale, moved = drag.moved;
+  drag = null;
+  if (!moved) return setFolded(!folded);
+  if (dy < -20) setFolded(true); else if (dy > 20) setFolded(false); else setFolded(folded);
+};
+grip.addEventListener('pointerup', endDrag);
+grip.addEventListener('pointercancel', endDrag);
+const scroller = $('scroll');
+scroller.addEventListener('wheel', e => {
+  if (!built) return;
+  if (e.deltaY > 6 && !folded) setFolded(true);
+  else if (e.deltaY < -6 && folded && scroller.scrollTop <= 0) setFolded(false);
+}, { passive: true });
+let touchY = null;
+scroller.addEventListener('touchstart', e => { touchY = e.touches[0].clientY; }, { passive: true });
+scroller.addEventListener('touchmove', e => {
+  if (!built || touchY == null) return;
+  const dy = e.touches[0].clientY - touchY;
+  if (dy < -30 && !folded) { setFolded(true); touchY = null; }
+  else if (dy > 60 && folded && scroller.scrollTop <= 0) { setFolded(false); touchY = null; }
+}, { passive: true });
+$('restart').addEventListener('click', reset);
+
+// Mouse or finger dragged down while the list is at its top.
+(() => {
+  const sc = document.getElementById('scroll');
+  let start = null;
+  const begin = y => { tapped = true; if (sc.scrollTop <= 2) { stopPull && stopPull(); start = { y, base: pull }; } };
+  const move = (y, e) => {
+    if (!start) return;
+    const dy = (y - start.y) / scale;
+    if (Math.abs(dy) > 5) tapped = false;
+    if (dy < -4 && pull <= 0) { start = null; return; }  // an ordinary scroll up the list
+    if (dy <= 0 && pull <= 0) return;
+    if (e && e.cancelable) e.preventDefault();
+    // Folded board: a firm pull brings it back first, as in the app.
+    if (built && folded && dy > 60) { setFolded(false); start = null; releasePull(); return; }
+    setPull(start.base + dy);
+  };
+  const end = () => { if (start) { start = null; releasePull(); } };
+  sc.addEventListener('touchstart', e => begin(e.touches[0].clientY), { passive: true });
+  sc.addEventListener('touchmove', e => move(e.touches[0].clientY, e), { passive: false });
+  sc.addEventListener('touchend', end); sc.addEventListener('touchcancel', end);
+  // Press anywhere on the words with the mouse and pull down. The pointer is
+  // captured, so the pull keeps tracking even if it leaves the page.
+  // The mouse drags the list like a finger: it scrolls first, and once it's
+  // at the top, the rest of the pull fans the cards.
+  let mouse = null;
+  sc.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'touch' || e.button !== 0 || e.target.closest('input,button,.x')) return;
+    stopPull && stopPull();
+    tapped = true;
+    downCard = e.target.closest('.card'); downY = e.clientY;
+    mouse = { y: e.clientY, scroll: sc.scrollTop, base: pull };
+    try { sc.setPointerCapture(e.pointerId); } catch (err) {}
+    e.preventDefault();
+  });
+  sc.addEventListener('pointermove', e => {
+    if (e.pointerType === 'touch' || !mouse) return;
+    const dy = (e.clientY - mouse.y) / scale;
+    if (Math.abs(dy) > 5) tapped = false;
+    const at = mouse.scroll - mouse.base - dy;   // where the list would be, negative past its top
+    if (at >= 0) { setPull(0); sc.scrollTop = at; }
+    else { sc.scrollTop = 0; if (built && folded && -at > 60) { setFolded(false); mouse = null; releasePull(); return; } setPull(-at); }
+  });
+  // Captured, the click lands on the list, not the card, so a tap is read here.
+  sc.addEventListener('pointerup', e => {
+    if (e.pointerType === 'touch') return;
+    const card = downCard; downCard = null;
+    if (tapped && card) { const i = [...document.getElementById('stack').children].indexOf(card); if (i >= 0) toggleCard(i); }
+    mouse = null; releasePull();
+  });
+  const lose = () => { if (mouse) { mouse = null; releasePull(); } };
+  sc.addEventListener('pointercancel', lose);
+  sc.addEventListener('lostpointercapture', lose);
+})();
+
+function reset() {
+  cards = START.map(c => ({ ...c })); built = false; adding = false; puzzle = null; folded = false;
+  for (const id in tiles) { tiles[id].remove(); delete tiles[id]; }
+  stopBand && stopBand(); band.style.height = '0px'; $('grip').style.height = '10px'; $('grip').querySelector('i').style.opacity = 0;
+  $('mainLabel').textContent = 'Build it';
+  setAdding(false); renderStack(); syncComposer();
+}
+reset();
+</script>
+</body>
+</html>

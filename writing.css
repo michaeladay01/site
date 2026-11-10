@@ -1,0 +1,223 @@
+/* A written piece ----------------------------------------------------------
+   Layered on work.css: a post is a project page whose argument happens to be
+   prose, so it keeps that page's chrome, its 44rem measure and its frames.
+   What it adds is a reading size, the rhythm between paragraphs, and a frame
+   that holds something running rather than something playing. */
+
+/* ---------- the reading type ----------
+   Taken from the blog, exactly: Helvetica Neue at 19px on 1.5, a 40rem
+   measure, headings carrying their emphasis in weight and air rather than
+   size. The masthead and footer keep the site's own small type — this is the
+   part you are here to read, and it is set the way the posts are set. */
+
+.post-head,
+.prose {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  letter-spacing: normal;
+}
+
+/* ---------- the head ---------- */
+
+.post-head { display: flex; flex-direction: column; }
+.post-head h1 {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: normal;
+}
+.post-head .post-meta {
+  margin-top: 0.25rem;
+  color: var(--ink-faint);
+  font-size: 12.5px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+/* The summary, set as body copy with the blog's own gap above it. */
+.post-head .lede {
+  margin-top: 2.25rem;
+  font-size: 19px;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+/* ---------- the writing ---------- */
+
+.prose {
+  /* No measure here: work.css gives every block on this page the same 44rem
+     column, and a paragraph narrower than the frame under it would break the
+     one left edge the page is built on. */
+  font-size: 19px;
+  line-height: 1.5;
+}
+.prose p {
+  margin: 1.25rem 0;
+  font-size: 19px;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+.prose > :first-child { margin-top: 0; }
+.prose > :last-child { margin-bottom: 0; }
+
+/* Same size as the body. The air above it is what marks the section. */
+.prose h2 {
+  margin: 4rem 0 1.25rem;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: normal;
+}
+.prose h2:first-child { margin-top: 0; }
+
+/* ---------- something running ----------
+   Not a clip of the work: the work itself, in an iframe. The frame matches
+   .shot so a live embed and a rendered one sit at the same depth on the page. */
+
+.embed {
+  display: block;
+  margin: 0;
+}
+.embed .holder {
+  display: block;
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--well);
+  box-shadow: var(--frame-lift);
+}
+.embed iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+}
+
+/* The frame ignores the pointer until it is asked for it. A reader scrolling
+   past a live desktop should keep scrolling, not find the page captured by
+   whatever was underneath the cursor. */
+.embed .holder iframe { pointer-events: none; }
+.embed .holder.is-live iframe { pointer-events: auto; }
+
+/* The invisible sheet that catches the first click. Nothing is drawn over the
+   frame — a label there covers the thing it points at. */
+.embed .take {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.embed .holder.is-live .take { pointer-events: none; }
+
+/* Shown only while the pointer is over an idle frame: enough to say the thing
+   is live, gone the moment it is. */
+.embed .hint {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 200ms var(--ease-out);
+}
+.embed .holder:hover .hint { opacity: 1; }
+.embed .holder.is-live .hint { opacity: 0; }
+
+.embed figcaption {
+  margin: 0.4rem 0 0;
+  color: var(--ink-faint);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+/* ---------- the places Internet Explorer goes ----------
+   Outlined pills rather than a list of links: they are controls, and they
+   change what is in the frame above them. */
+
+.sites {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.sites button {
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 12.5px;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    border-color 150ms var(--ease-out),
+    color 150ms var(--ease-out);
+}
+.sites button:hover { border-color: var(--line-strong); color: var(--ink); }
+.sites button[aria-current="true"] { border-color: var(--ink); color: var(--ink); }
+
+/* ---------- the way out ----------
+   The card at the end that sends the reader to the thing itself. */
+
+.visit {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  transition:
+    border-color 150ms var(--ease-out),
+    background-color 150ms var(--ease-out);
+}
+.visit:hover { border-color: var(--line-strong); background: var(--well); }
+.visit .what { flex: 1; min-width: 0; }
+.visit .kicker { display: block; color: var(--ink-faint); font-size: 12.5px; }
+.visit .title { display: block; margin-top: 1px; font-size: 15px; font-weight: 700; }
+.visit .where { flex-shrink: 0; color: var(--ink-faint); font-size: 12.5px; }
+.visit .arrow {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--ink-dim);
+  transition:
+    border-color 150ms var(--ease-out),
+    color 150ms var(--ease-out);
+}
+.visit:hover .arrow { border-color: var(--ink); color: var(--ink); }
+
+@media (max-width: 560px) {
+  .visit .where { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .embed .hint { transition: none; }
+}
+
+/* A destination that does not exist yet. It still has to sit on the page —
+   the post ends on it — so it is drawn as the card it will be, with the
+   pointer and the hover saying plainly that there is nowhere to go. */
+.visit.pending {
+  cursor: default;
+  opacity: 0.6;
+}
+.visit.pending:hover {
+  border-color: var(--line);
+  background: transparent;
+}
+.visit.pending:hover .arrow { border-color: var(--line); color: var(--ink-dim); }

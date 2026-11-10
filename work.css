@@ -1,0 +1,198 @@
+/* A project page -----------------------------------------------------------
+   Work full width, words in a column. The clips are the argument, so they get
+   the measure; everything written about them sits in a reading column the
+   same width Explorations uses, so the two pages feel like one site. */
+
+.wrap--work main > * {
+  width: 100%;
+  max-width: 44rem;
+  margin-inline: auto;
+}
+/* Flush with the writing. A frame a little wider than the text reads as a
+   mistake rather than a decision — either it lines up or it is clearly its
+   own thing. One column, one edge. */
+.wrap--work main > .shots { max-width: 44rem; }
+
+/* The frames run as one block; the writing above and the spec below keep
+   their own air. */
+.wrap--work main { row-gap: 24px; }
+.wrap--work main > .project-body { margin-top: 0.75rem; }
+
+.project-head { display: flex; flex-direction: column; gap: 0.25rem; }
+.project-head h1 { font-size: 17px; font-weight: 700; letter-spacing: -0.012em; }
+.project-head .role { color: var(--ink-dim); font-size: 15px; text-align: left; }
+
+.project-body { margin-top: 1.25rem; }
+.project-body p { margin-bottom: 0.9rem; max-width: 40rem; text-wrap: pretty; }
+.project-body p:last-child { margin-bottom: 0; }
+
+/* The sentence only Michaela can write. Visible on purpose. */
+.tk {
+  background: var(--accent-wash);
+  padding: 0.05em 0.2em;
+  border-radius: 2px;
+  color: var(--ink-dim);
+}
+
+/* No captions now, so the frames sit in one close rhythm. */
+.shots { display: grid; gap: 24px; }
+.shot {
+  display: block;
+  overflow: hidden;
+  border-radius: var(--radius);
+}
+/* The blog puts every embed in one frame: a hairline and a radius. A clip
+   whose content is light needs separating from the paper, and a hairline does
+   that without adding either a black mount or a shadow — neither of which
+   exists anywhere else in this design. */
+.shot > video,
+.shot > img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--radius);
+  /* No hairline. Against a dark or saturated clip a 1px light border reads as
+     an outline with a seam where it meets the frame; the lift already does the
+     separating. */
+  box-shadow: var(--frame-lift);
+}
+
+/* A coded piece lays itself out with position:absolute against its host and
+   sizes its type in cqw, exactly as it does inside .reel-frame. Without a
+   positioned, sized box to sit in, its layers escape to the page and every
+   cqw resolves against the wrong container — which is why four pieces landed
+   on top of each other at four times the size. This is that box. */
+.shot > .es-piece {
+  display: block;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--radius);
+  box-shadow: var(--frame-lift);
+  /* NO background of any kind on this element, not even transparent. Each
+     piece paints its own ground — protocol is #0a0a0a with white type — and
+     anything set here is two classes to its one, so it wins and leaves white
+     text on nothing. */
+}
+.shot-note {
+  margin: 0.4rem 0 0;
+  color: var(--ink-faint);
+  font-size: 12.5px;
+}
+
+/* Label / value, the one thing worth keeping from the card experiments. */
+.spec { margin: 2.5rem 0 0; padding: 0; border-top: 1px solid var(--line); }
+.spec div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.spec dt { color: var(--ink-faint); font-size: 13.5px; }
+.spec dd { margin: 0; text-align: right; font-size: 13.5px; }
+
+.project-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+  font-size: 13.5px;
+}
+.project-nav a {
+  color: var(--ink-dim);
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 150ms var(--ease-out);
+}
+.project-nav a:hover { text-decoration-color: var(--ink); color: var(--ink); }
+
+/* Two portraits on one stage ----------------------------------------------
+   A 4:5 clip at full column width is over 800px tall — you scroll past a
+   fragment of it. Stood side by side on a 16:9 ground, both fit, they can be
+   compared, and the frame is the same size and shape as every other frame on
+   the page. */
+
+/* Two pieces side by side ---------------------------------------------------
+   No mount. The pieces sit straight on the paper, each lifted on its own, the
+   way every other frame on the site does. The black was there to join them
+   into one frame; the shared row and the gap do that without adding a slab of
+   colour to the page. */
+
+.stage {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(0.75rem, 2%, 1.25rem);
+  align-items: start;
+}
+
+.stage > video,
+.stage > img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border-radius: var(--radius);
+  box-shadow: var(--frame-lift);
+}
+
+/* On its own a piece takes the whole measure and keeps its own shape. */
+.stage:has(> :only-child) { grid-template-columns: minmax(0, 1fr); }
+.stage > :only-child { aspect-ratio: auto; }
+
+@media (max-width: 560px) {
+  .stage { gap: 0.75rem; }
+}
+
+/* Context, not credit ------------------------------------------------------
+   Photographs of the room the work ran in. Set apart from the motion above:
+   a quieter ground, and a line saying whose they are, so nothing here can be
+   mistaken for a piece of motion design. */
+
+/* Same black ground as the motion above it; the line underneath does the
+   work of saying whose photographs these are. */
+.context-note {
+  margin: 0.6rem 0 0;
+  color: var(--ink-faint);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+/* Contact sheet -----------------------------------------------------------
+   A loop shows you the motion but not the edit. Laid out as frames in order,
+   the same film shows the decisions: where it holds, where it cuts, how long
+   each beat gets. That is the part of the craft a playing clip hides. */
+
+.sheet {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* Wider gutters now there is no ground behind them: the grid and the
+     timecodes do the joining the black slab used to do. */
+  gap: clamp(0.75rem, 2%, 1.25rem);
+}
+.sheet figure { margin: 0; }
+.sheet img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: var(--frame-lift);
+}
+.sheet figcaption {
+  margin-top: 0.3rem;
+  color: var(--ink-faint);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 560px) {
+  .sheet { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

@@ -1,0 +1,280 @@
+/* Home — composition from the THEO / Studioform / Merrell references,
+   finish from the blog. No new colour: every token here is style.css's.
+
+   The references are loud because of scale and nothing else: 11px nav, small
+   grey copy, one enormous word. Rendered in the blog's palette that reads as
+   confidence rather than noise. */
+
+.wrap--home {
+  grid-template-rows: auto 1fr auto;
+  row-gap: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+/* ---------- the one sentence ---------- */
+
+.opening {
+  max-width: 34rem;
+  color: var(--ink-dim);
+  text-wrap: pretty;
+}
+
+/* ---------- the row of work ----------
+   Four pieces at once. It wraps rather than scrolls sideways: a row you have
+   to drag hides work from anyone who does not think to try. */
+
+/* Explorations has two cards rather than six, so the row is capped — three
+   columns' worth of width with two items in it would make each one enormous. */
+.strip.strip--two { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 62rem; }
+
+.strip {
+  display: grid;
+  /* Six pieces, set as two rows of three rather than one long row: at six
+     across each frame is too small to read what is happening in it. */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(0.75rem, 1.6vw, 1.25rem) clamp(0.5rem, 1.2vw, 0.875rem);
+}
+
+.card { display: block; }
+
+/* The crop holds still and the work moves inside it: the card never changes
+   size, so hovering one never nudges the other five. */
+.frame,
+.card--code .stack {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius);
+  box-shadow: var(--frame-lift);
+  /* The browser scales a raster frame once rather than on every painted
+     frame, which is what keeps the zoom from shimmering. */
+  will-change: transform;
+}
+
+.card video,
+.card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+/* The hover ---------------------------------------------------------------
+
+   Four things happen at once, and they are deliberately out of phase:
+
+     the frame   lifts and tilts a few degrees toward the cursor, in real 3D
+     the work    counter-moves inside its own crop, about 40% of the tilt, so
+                 the picture sits BEHIND the glass rather than on it — that
+                 parallax is what sells the depth
+     the others  step back: a touch smaller, a touch quieter, so the grid
+                 answers as one system instead of six separate boxes
+     the label   follows last, a beat behind the frame
+
+   Every value comes off one pair of numbers — the cursor's position in the
+   card, normalised to -1..1 — written to custom properties by one rAF. CSS
+   does the rest, so nothing here is a keyframe and the whole thing reverses
+   cleanly from wherever it was interrupted. */
+
+.strip { perspective: 1400px; }
+
+.frame,
+.card--code .stack {
+  transform-style: preserve-3d;
+  transform-origin: center;
+  transition:
+    transform 620ms var(--ease-snap),
+    box-shadow 620ms var(--ease-out);
+  will-change: transform;
+}
+
+.card:hover .frame,
+.card--code:hover .stack,
+.card:focus-visible .frame,
+.card--code:focus-visible .stack {
+  transform:
+    scale(1.045)
+    rotateX(calc(var(--my, 0) * -4deg))
+    rotateY(calc(var(--mx, 0) * 5deg))
+    translateZ(0);
+  box-shadow:
+    0 2px 8px -2px rgba(0, 0, 0, 0.12),
+    0 28px 56px -20px rgba(0, 0, 0, 0.30);
+}
+
+/* The work drifts the other way inside the crop. Slightly larger than its
+   frame so a shift never exposes an edge. */
+.frame > *,
+.card--code .stack > .layer {
+  transition: transform 620ms var(--ease-snap);
+}
+.card:hover .frame > *,
+.card--code:hover .stack > .layer {
+  transform:
+    scale(1.06)
+    translate3d(calc(var(--mx, 0) * -1.6%), calc(var(--my, 0) * -1.6%), 0);
+}
+
+/* The press. Shorter, flatter, and it lets go. */
+.card:active .frame,
+.card--code:active .stack {
+  transform: scale(0.992);
+  box-shadow: 0 1px 3px -1px rgba(0, 0, 0, 0.12);
+  transition-duration: 150ms;
+}
+
+/* Everything that is not being pointed at steps back — by a hair of scale
+   only. Dimming them made the page look disabled rather than focused, which
+   is the opposite of the intent. */
+.strip.is-hovering .card:not(:hover) .frame,
+.strip.is-hovering .card--code:not(:hover) .stack {
+  transform: scale(0.99);
+}
+.strip .frame,
+.strip .stack { transition-property: transform, box-shadow, opacity; }
+
+/* The one that is growing sits above its neighbours while it does. */
+.card { position: relative; }
+.card:hover, .card:active { z-index: 1; }
+
+/* The label follows, a touch behind, so the card reads as one object. */
+.card .card-label { transition: transform 520ms var(--ease-snap); }
+.card:hover .card-label { transform: translateX(3px); }
+.card .card-label { transition: transform 620ms var(--ease-snap), opacity 400ms var(--ease-out); }
+
+.card-label {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 13px;
+}
+.card-label span { color: var(--ink-faint); }
+/* Marks the one card that leaves the site. */
+.card-label .out { margin-left: auto; }
+
+/* ---------- the roster ----------
+   style.css already carries .cols / .col and the hover note; this only sets
+   where the block sits on this page. */
+
+/* Under the wordmark, not above it. Moving the roster down is what lets the
+   top of the name sit just inside the fold on a laptop — you see it before
+   you scroll rather than discovering it at the end. */
+.cols { margin-top: 2rem; }
+
+/* ---------- the sign-off: the name, once ---------- */
+
+.signoff {
+  container-type: inline-size;
+  padding-top: 0;
+}
+
+/* Sized off the column, so it fills its measure at any width with no
+   breakpoints. Measured on Inter: twelve characters at this tracking come out
+   a hair under the full width at 16.4cqw. */
+.hero-name {
+  font-family: 'Inter', var(--sans);
+  font-size: 16.4cqw;
+  font-weight: 700;
+  font-variation-settings: 'wght' 700;
+  line-height: 0.85;
+  letter-spacing: -0.045em;
+  white-space: nowrap;
+}
+
+.signoff-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  color: var(--ink-faint);
+  font-size: 12.5px;
+}
+.signoff-meta a {
+  color: var(--ink-dim);
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 150ms var(--ease-out);
+}
+.signoff-meta a:hover { text-decoration-color: var(--ink); }
+
+@media (max-width: 900px) {
+  .strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 560px) {
+  .topbar { flex-direction: column; gap: 0.35rem; }
+  .topbar .role { text-align: left; }
+  .strip { grid-template-columns: 1fr 1fr; }
+}
+
+/* The Eight Sleep card: four coded pieces stacked, one lit at a time. */
+
+.card--code .stack { aspect-ratio: 16 / 9; }
+.card--code .layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 700ms var(--ease-in-out);
+}
+.card--code .layer.is-on { opacity: 1; }
+
+
+@media (prefers-reduced-motion: reduce) {
+  .card:hover .frame,
+  .card:active .frame,
+  .card:hover .frame > *,
+  .card--code:hover .stack,
+  .card--code:active .stack,
+  .card--code:hover .stack > .layer,
+  .strip.is-hovering .card:not(:hover) .frame,
+  .strip.is-hovering .card--code:not(:hover) .stack,
+  .card:hover .card-label { transform: none; box-shadow: none; }
+}
+
+/* A card on Explorations carries a summary under its label. */
+.card-sub {
+  display: block;
+  margin-top: 0.3rem;
+  max-width: 34em;
+  color: var(--ink-dim);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.card-label span { color: var(--ink-faint); }
+
+/* Explorations: the cards sit centred in the page rather than running to the
+   left edge, and the sign-off is the line only — no wordmark. */
+.strip.strip--two { margin-inline: auto; }
+/* The sign-off line spans the page exactly as it does on the index — email at
+   one edge, availability at the other. Capping it to the card measure pulled
+   the two halves together. */
+.signoff--plain { padding-top: 0; }
+
+/* A card mid-hover is scaled and tilted in 3D. If it is still in that state
+   when the browser snapshots the page, the morph starts from a tilted box and
+   lands on a flat one — which is most of what reads as glitchy. The click
+   handler adds this, and it wins over every hover rule. */
+.card.is-leaving .frame,
+.card.is-leaving .stack,
+.card.is-leaving .frame > *,
+.card.is-leaving .stack > .layer,
+.card.is-leaving .card-label {
+  transform: none !important;
+  transition: none !important;
+}
+
+/* And the 3D context has to go with it. A view-transition-name inside a
+   transformed or perspective'd subtree cannot be snapshotted — the browser
+   gives up and skips the whole transition, which is the hard cut. perspective,
+   preserve-3d and will-change: transform all create one, so all three are
+   dropped the moment a card is clicked. */
+.strip.is-leaving { perspective: none !important; }
+.strip.is-leaving .frame,
+.strip.is-leaving .stack {
+  transform-style: flat !important;
+  will-change: auto !important;
+}

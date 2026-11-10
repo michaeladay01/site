@@ -1,0 +1,2475 @@
+/* Michaela Day */
+
+:root {
+  /* Taken from the blog's globals.css so the two properties are one site.
+     Paper, ink, and almost nothing else. */
+  --bg: #ffffff;
+  --ink: #121212;
+  --ink-dim: #6b6b6b;
+  --ink-faint: #9a9a9a;
+  --line: #e6e6e6;
+  --line-strong: #d2d2d2;
+  --well: #f6f6f6;
+  --accent-wash: #fbe9a8;
+  /* Lift for a frame whose content is light, so it sits on the paper rather
+     than bleeding into it. Two layers: a tight one for the edge and a wide,
+     soft one for the weight. */
+  --frame-lift:
+    0 1px 2px -1px rgba(0, 0, 0, 0.07),
+    0 14px 32px -18px rgba(0, 0, 0, 0.22);
+  --radius: 12px;
+
+  /* One gutter for the whole page, and one column track that every block
+     shares. The reel takes [full], everything else takes [content], so the
+     media bleeds to the edges and the type still lines up with the footer. */
+  --gutter: clamp(1.25rem, 4vw, 3rem);
+  --cols:
+    [full-start] var(--gutter)
+    [content-start] minmax(0, 1fr) [content-end]
+    var(--gutter) [full-end];
+
+  --sans: ui-sans-serif, -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+
+  /* The easing is the portfolio. Nothing here uses a browser default. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-snap: cubic-bezier(0.34, 1.4, 0.64, 1);
+
+  /* Starfield placeholder. Sampled from the Eight Sleep source file, not picked.
+     --field-ceiling is the brightest background pixel in that file; the shader
+     clamps to it so the field can never out-brighten the star. */
+  --star-dark: #335bb0;
+  --star-light: #537ed4;
+  --field-floor: #01060d;
+  --field-deep: #042248;
+  --field-ceiling: #2e4e8c;
+  /* The field can legally brighten to --field-ceiling, which leaves only
+     1.26:1 against the star's dark stop. This halo rides with the star and
+     restores the edge without touching the field. */
+  --star-halo: rgba(1, 7, 20, 0.62);
+  --star-cycle: 2750ms;
+
+  /* Magnetic grid. grid.js reads these three off :root at mount. */
+  --grid-bg: #e6dcc7;
+  --grid-line: #ffffff;
+  --grid-near: #8d7a56;
+
+  /* The chrome environment. There is no light in that piece - a mirror has
+     nothing to be lit by - so these four are the whole look: what the metal
+     sees looking up, at the horizon, down, and at the sun. */
+  --chrome-sky: #9a9a9a;
+  --chrome-horizon: #f2f2f2;
+  --chrome-ground: #2a2a2a;
+  --chrome-sun: #ffffff;
+
+  /* Construction sheet. The drawing carries no colour of its own - every mark
+     is currentColor and every white fill is .paper - so these two tokens are
+     the whole palette. */
+  --sheet-paper: #eeeeee;
+  --sheet-ink: #111111;
+
+  /* Protocol. Dark on dark by nature and the same in either theme: the source
+     is a dark screen, and a light version of it would be a different piece.
+     One ink — every lesser state is that ink at an opacity, which is why
+     there is no second text colour here. */
+  --protocol-bg: #0a0a0a;
+  --protocol-ink: #ffffff;
+  --protocol-rail: rgba(255, 255, 255, 0.16);
+  --protocol-disc: #2a2a2a;
+
+  /* Sleeve. The ground is darker than the page in both themes, so the printed
+     cover stays the brightest thing in the frame - black in both themes, with
+     one soft pool of light behind the sleeve so the ground is a room and not a
+     void. The card colours are paper and do not change with the theme: the
+     object is lit, not themed. */
+  --sleeve-ground: #a3b6c1;
+  --sleeve-ground-lit: #bccdd6;
+  --sleeve-edge: #e8e2d4;
+  --sleeve-spine: #c6bdab;
+  --sleeve-mouth: #1a1a1a;
+
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f0f0f;
+    --ink: #ededed;
+    --ink-dim: #a0a0a0;
+    --ink-faint: #757575;
+    --line: #262626;
+    --line-strong: #363636;
+    --well: #151515;
+    --frame-lift:
+      0 1px 2px -1px rgba(0, 0, 0, 0.5),
+      0 16px 36px -18px rgba(0, 0, 0, 0.7);
+    --sheet-paper: #141412;
+    --sheet-ink: #d8d6d0;
+    --sleeve-ground: #8fa3b0;
+    --sleeve-ground-lit: #a8bcc7;
+  }
+}
+
+:root[data-theme="dark"] {
+  --sleeve-ground: #8fa3b0;
+  --sleeve-ground-lit: #a8bcc7;
+  --sheet-paper: #141412;
+  --sheet-ink: #d8d6d0;
+  --well: #151515;
+  --bg: #0f0f0f;
+  --ink: #ededed;
+  --ink-dim: #a0a0a0;
+  --ink-faint: #757575;
+  --line: #262626;
+  --line-strong: #363636;
+  --frame-lift:
+    0 1px 2px -1px rgba(0, 0, 0, 0.5),
+    0 16px 36px -18px rgba(0, 0, 0, 0.7);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.65;
+  letter-spacing: -0.003em;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  display: grid;
+  grid-template-columns: var(--cols);
+  /* main, then footer. main takes the slack so the footer keeps the bottom. */
+  grid-template-rows: auto 1fr auto;
+  row-gap: clamp(2.5rem, 6vw, 4.5rem);
+  min-height: 100vh;
+  min-height: 100dvh;
+  /* No max-width and no side padding. Width comes from the gutter tracks, so
+     a wide screen gets a wide page instead of a column down the middle. */
+  padding: 0 0 var(--gutter);
+}
+
+.wrap > * { grid-column: content; }
+
+/* The reel follows the name directly, so that one gap is tighter than the
+   rhythm the rest of the page keeps. */
+.wrap > .masthead { margin-bottom: calc(clamp(2.5rem, 6vw, 4.5rem) * -0.55); }
+
+/* The content column is wide, but prose is not. Blocks that are read rather
+   than looked at get their own measure inside it. */
+.wrap > main {
+  grid-column: full;
+  display: grid;
+  grid-template-columns: var(--cols);
+  align-content: start;
+  row-gap: clamp(2rem, 5vw, 3.5rem);
+}
+
+.wrap > main > * { grid-column: content; }
+
+a { color: inherit; text-decoration: none; }
+
+/* Nothing shouts. A heading sits just above the body in weight and carries
+   its emphasis in the rule beside it, as on the blog. */
+h1, h2, h3 { margin: 0; font-weight: 700; font-size: 15px; letter-spacing: -0.012em; }
+::selection { background: var(--accent-wash); color: var(--ink); }
+p { margin: 0; }
+
+.tnum { font-variant-numeric: tabular-nums; }
+
+:focus-visible { outline: 1.5px solid var(--ink-dim); outline-offset: 2px; border-radius: 2px; }
+
+/* Entrance: one stagger, and then never again.
+   A page that performs on every scroll is a demo. This performs once. */
+
+[data-rise] {
+  opacity: 0;
+  transform: translateY(0.6rem);
+  animation: rise 950ms var(--ease-out) forwards;
+  animation-delay: calc(var(--i, 0) * 90ms + 60ms);
+}
+
+@keyframes rise { to { opacity: 1; transform: none; } }
+
+/* Masthead */
+
+.masthead {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 2rem;
+  align-items: baseline;
+}
+
+/* Name and role open the page, above the full-bleed reel. Still small: the
+   reel is the thing to look at, this is the label on it. */
+.masthead {
+  padding-top: clamp(1.25rem, 3vw, 2.25rem);
+}
+
+/* The name is set in Inter so its weight axis is available to the hover.
+   Everything else on the page stays on the system stack. */
+.masthead h1 {
+  position: relative;
+  font-family: 'Inter', var(--sans);
+  font-variation-settings: 'wght' 450;
+}
+
+/* Each letter is pinned to the width it has at the base weight, measured once.
+   The weight axis changes a glyph's advance, and without the pin the name
+   reflows under the cursor - which reads as broken, not as alive. */
+.masthead h1 .ltr {
+  display: inline-block;
+  text-align: center;
+  transition: opacity 260ms var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .masthead h1 .ltr { transition: none; }
+}
+
+.masthead h1 { font-size: 15px; }
+
+/* On an inner page the name is the way home. The weight swell is its own
+   hover state, so it needs no underline — only a pointer. */
+.masthead h1 a { cursor: pointer; }
+
+/* The one tab. A line of text in the masthead, not a navigation bar. */
+.nav {
+  display: flex;
+  gap: 1rem;
+  font-size: 13px;
+}
+.nav a {
+  color: var(--ink-dim);
+  transition: color 150ms var(--ease-out);
+}
+.nav a:hover, .nav a[aria-current="page"] { color: var(--ink); }
+
+.role {
+  color: var(--ink-dim);
+  font-size: 13px;
+  text-align: right;        /* two lines now, so they need an edge to sit on */
+  line-height: 1.35;
+}
+
+/* Reel: the one big quiet block */
+
+/* The reel is the only full-bleed block. Its switcher stays in the column. */
+.reel {
+  grid-column: full;
+  display: grid;
+  grid-template-columns: var(--cols);
+  row-gap: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+/* Beats .wrap > main > * on specificity, which is the point. */
+.wrap > main > .reel,
+.wrap > main > .live { grid-column: full; }
+
+.reel > .reel-frame { grid-column: content; }
+
+.reel-frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  /* A rounded canvas inside the page margins, not edge to edge.
+     The 16:9 stays exact: the pieces are sized in cqw off this box, so a
+     height cap would widen the ratio and clip them. */
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--well);
+  border: 1px solid var(--line);
+}
+
+/* Placeholder field. Swaps out for the reel by deleting data-placeholder. */
+
+#field {
+  position: absolute;
+  inset: 0;
+  display: none;
+  width: 100%;
+  height: 100%;
+}
+
+.reel[data-placeholder] #field { display: block; }
+.reel[data-placeholder] video { visibility: hidden; }
+.reel[data-placeholder] .sound { display: none; }
+
+/* Light falloff into the corners, so the volume reads as a space
+   rather than as a rectangle of dots. */
+.reel[data-placeholder] .reel-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 90% at 50% 45%, transparent 45%, rgba(5, 5, 5, 0.55) 100%);
+}
+
+.reel-frame video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Sound: the only control, and it stays out of the way until wanted. */
+
+.sound {
+  position: absolute;
+  left: 1rem;
+  bottom: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.5rem 0.8rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(13, 13, 12, 0.42);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.2);
+  color: #f2f1ee;
+  font: inherit;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  opacity: 0.75;
+  transition:
+    background 240ms var(--ease-out),
+    opacity 240ms var(--ease-out),
+    transform 460ms var(--ease-snap);
+}
+
+.reel-frame:hover .sound { opacity: 1; }
+.sound:hover { background: rgba(13, 13, 12, 0.66); }
+.sound:active { transform: scale(0.97); }
+
+.sound-bars { display: flex; align-items: flex-end; gap: 2px; width: 11px; height: 11px; }
+.sound-bars i { flex: 1; height: 25%; background: currentColor; transition: height 300ms var(--ease-out); }
+
+.sound[aria-pressed="true"] .sound-bars i { animation: bar 900ms var(--ease-in-out) infinite; }
+.sound[aria-pressed="true"] .sound-bars i:nth-child(2) { animation-delay: 150ms; }
+.sound[aria-pressed="true"] .sound-bars i:nth-child(3) { animation-delay: 300ms; }
+
+@keyframes bar { 0%, 100% { height: 30%; } 50% { height: 100%; } }
+
+/* Statement */
+
+.statement { display: flex; flex-direction: column; gap: 0.75rem; max-width: 34rem; }
+.statement p { color: var(--ink-dim); }
+
+.cta { margin-top: 0.5rem; }
+
+/* An underline, not a button. The blog has no pills in it. */
+.cta a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: text-decoration-color 150ms var(--ease-out);
+}
+.cta a:hover { text-decoration-color: var(--ink); }
+
+/* Footer: small columns, plenty of air */
+
+footer {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2.5rem, 8vw, 5rem);
+  padding-top: clamp(2rem, 5vw, 3rem);
+}
+
+.cols {
+  display: grid;
+  /* Two columns now, and the last track is the empty one the hover note sits
+     in. Collaborator names are long, so that one gets room. */
+  grid-template-columns: minmax(0, 9rem) minmax(0, 11rem) minmax(0, 1fr);
+  gap: 1.5rem 2.5rem;
+}
+
+/* Quiet label text, plain and never uppercase — the blog's rule. */
+.col h3 {
+  margin-bottom: 0.5rem;
+  color: var(--ink-faint);
+  font-size: 12.5px;
+  font-weight: 400;
+  letter-spacing: -0.003em;
+}
+
+.col ul { margin: 0; padding: 0; list-style: none; }
+
+.col li {
+  color: var(--ink-dim);
+  font-size: 13.5px;
+  line-height: 1.75;
+}
+
+/* Only the links respond. The client names are facts, not buttons. */
+.col a { transition: color 240ms var(--ease-out); }
+.col a:hover { color: var(--ink); }
+
+.credit {
+  justify-self: end;
+  align-self: end;
+  color: var(--ink-faint);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+}
+
+.legal {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  color: var(--ink-faint);
+  font-size: 12.5px;
+}
+
+@media (max-width: 640px) {
+  .cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .credit { grid-column: 1 / -1; justify-self: start; }
+  .legal { flex-direction: column; gap: 0.25rem; }
+}
+
+/* If someone has asked for less movement, they get none of it. */
+@media (prefers-reduced-motion: reduce) {
+  [data-rise] { opacity: 1; transform: none; animation: none; }
+  .sound[aria-pressed="true"] .sound-bars i { animation: none; height: 65%; }
+  *, *::before, *::after { transition-duration: 1ms !important; }
+}
+
+@media print {
+  body { background: #fff; color: #000; }
+  .sound, .cta { display: none; }
+  .reel-frame { box-shadow: none; border: 1px solid #ccc; }
+  /* Placeholder field. Swaps out for the reel by deleting data-placeholder. */
+
+#field {
+  position: absolute;
+  inset: 0;
+  display: none;
+  width: 100%;
+  height: 100%;
+}
+
+.reel[data-placeholder] #field { display: block; }
+.reel[data-placeholder] video { visibility: hidden; }
+.reel[data-placeholder] .sound { display: none; }
+
+/* Light falloff into the corners, so the volume reads as a space
+   rather than as a rectangle of dots. */
+.reel[data-placeholder] .reel-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 90% at 50% 45%, transparent 45%, rgba(5, 5, 5, 0.55) 100%);
+}
+
+.reel-frame video { filter: grayscale(1) contrast(1.1); }
+  .col li, .statement p, .credit, .legal { color: #000; }
+}
+
+
+/* ---------------------------------------------------------------------------
+   Starfield placeholder
+
+   Sits inside .reel-frame and keeps its 16:9. Drop the video back in and
+   delete the .starfield block from index.html; nothing else needs touching.
+
+   The spin is not an easing curve. It is 51 keyframes measured frame by frame
+   off the source video: a 360 degree turn that finishes at about 31% of the
+   cycle and then holds still. Do not tidy it into a cubic-bezier.
+   --------------------------------------------------------------------------- */
+
+.starfield {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  isolation: isolate;
+  perspective: 2600px;
+  /* fallback: shown only if WebGL is unavailable */
+  background: linear-gradient(118deg in oklab,
+              var(--field-floor) 0%, #020c1c 34%, #04203f 70%, var(--field-deep) 100%);
+}
+
+.starfield-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.starfield-star {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 25%;              /* 960 / 3840 in the source */
+  aspect-ratio: 1 / 1;
+  translate: -50% -50%;
+  z-index: 2;
+  transform-style: preserve-3d;
+  animation: star-spin var(--star-cycle) linear infinite;
+}
+
+/* var() is not valid in an SVG presentation attribute, so the stops take their
+   colour from CSS instead, keeping the tokens as the single source. */
+.star-stop-dark  { stop-color: var(--star-dark); }
+.star-stop-light { stop-color: var(--star-light); }
+
+.starfield-star svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  /* On the svg, not on .starfield-star: a filter there would create a
+     containing block and flatten the preserve-3d the spin depends on.
+     Two passes - a tight one for the edge, a wide one for the lift. */
+  filter:
+    drop-shadow(0 0 6px var(--star-halo))
+    drop-shadow(0 0 26px var(--star-halo));
+}
+
+@keyframes star-spin {
+  0.0% { transform: rotateY(7.4deg); }
+  0.606% { transform: rotateY(21.0deg); }
+  1.212% { transform: rotateY(39.0deg); }
+  1.818% { transform: rotateY(56.4deg); }
+  2.424% { transform: rotateY(73.2deg); }
+  3.03% { transform: rotateY(89.5deg); }
+  3.636% { transform: rotateY(104.8deg); }
+  4.242% { transform: rotateY(119.7deg); }
+  4.848% { transform: rotateY(134.0deg); }
+  5.455% { transform: rotateY(146.6deg); }
+  6.061% { transform: rotateY(159.0deg); }
+  6.667% { transform: rotateY(169.6deg); }
+  7.273% { transform: rotateY(172.6deg); }
+  7.879% { transform: rotateY(196.5deg); }
+  8.485% { transform: rotateY(206.8deg); }
+  9.091% { transform: rotateY(215.9deg); }
+  9.697% { transform: rotateY(224.7deg); }
+  10.303% { transform: rotateY(234.1deg); }
+  10.909% { transform: rotateY(241.9deg); }
+  11.515% { transform: rotateY(250.2deg); }
+  12.121% { transform: rotateY(257.6deg); }
+  12.727% { transform: rotateY(264.8deg); }
+  13.333% { transform: rotateY(269.1deg); }
+  13.939% { transform: rotateY(277.6deg); }
+  14.545% { transform: rotateY(283.4deg); }
+  15.152% { transform: rotateY(288.8deg); }
+  15.758% { transform: rotateY(293.9deg); }
+  16.364% { transform: rotateY(299.2deg); }
+  16.97% { transform: rotateY(303.6deg); }
+  17.576% { transform: rotateY(308.3deg); }
+  18.182% { transform: rotateY(312.0deg); }
+  18.788% { transform: rotateY(316.0deg); }
+  19.394% { transform: rotateY(319.5deg); }
+  20.0% { transform: rotateY(322.5deg); }
+  20.606% { transform: rotateY(325.7deg); }
+  21.212% { transform: rotateY(329.3deg); }
+  21.818% { transform: rotateY(331.2deg); }
+  22.424% { transform: rotateY(333.2deg); }
+  23.03% { transform: rotateY(335.4deg); }
+  23.636% { transform: rotateY(337.8deg); }
+  24.242% { transform: rotateY(340.4deg); }
+  24.848% { transform: rotateY(340.4deg); }
+  25.455% { transform: rotateY(343.5deg); }
+  26.061% { transform: rotateY(343.5deg); }
+  26.667% { transform: rotateY(345.2deg); }
+  27.273% { transform: rotateY(347.2deg); }
+  28.485% { transform: rotateY(347.2deg); }
+  29.091% { transform: rotateY(349.6deg); }
+  30.303% { transform: rotateY(349.6deg); }
+  30.909% { transform: rotateY(360.0deg); }
+  99.394% { transform: rotateY(360.0deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .starfield-star {
+    animation: none;
+    transform: rotateY(0deg);
+  }
+}
+
+
+
+/* ---------------------------------------------------------------------------
+   Reel pieces and the switcher
+
+   Each piece fills the reel frame and only one is visible at a time. The
+   globe's composition is measured from the Eight Sleep source: centre at
+   49.82 / 34.58 per cent, radius 12.68 per cent of frame width, type sized
+   from the ascender-to-descender bands in the original.
+   --------------------------------------------------------------------------- */
+
+.piece {
+  position: absolute;
+  inset: 0;
+}
+.piece[hidden] { display: none; }
+
+/* --- the globe --- */
+
+.globe-scene {
+  position: absolute;
+  inset: 0;
+  container-type: inline-size;
+  overflow: hidden;
+  background: #000;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", var(--sans, sans-serif);
+  color: #fff;
+}
+
+.globe-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.globe-copy {
+  position: absolute;
+  left: 50%;
+  top: 67.3%;
+  translate: -50% 0;
+  width: 60cqw;
+  text-align: center;
+  pointer-events: none;
+}
+.globe-copy h2 {
+  margin: 0;
+  font-size: 2.062cqw;          /* source band 76px / 0.96em -> 79px at 4K */
+  font-weight: 600;
+  letter-spacing: -0.024em;
+  line-height: 1.2;
+  color: #fff;
+}
+.globe-copy p {
+  margin: 1.55cqw 0 0;
+  font-size: 1.383cqw;          /* band 51px / 0.96em -> 53px */
+  line-height: 1.585;           /* measured pitch 84px */
+  letter-spacing: -0.02em;
+  color: #a1a1a6;
+}
+.globe-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2.6cqw;
+  /* From the source SVG: rect 120 x 48, rx 24. So exactly 2.5:1, and rx is
+     half the height, which is a true stadium - not corner-shape: squircle,
+     which computes to superellipse(2) and is squarer than a circle. */
+  width: 10.9375cqw;    /* 4.375 x 2.5 */
+  height: 4.375cqw;
+  border-radius: 999px;
+  background: #fff;
+  color: #000;
+  font-size: 1.356cqw;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+/* --- the switcher --- */
+
+/* Chrome. The stage is black because the shader clears to its own near-black
+   and anything behind it would only show for one frame. The environment lives
+   on :root so the metal can be re-lit without touching the shader. */
+
+.chrome-stage {
+  position: absolute;
+  inset: 0;
+  background: #080a0b;
+}
+
+.chrome-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Interactive: its own frame below the reel, full bleed like the reel so the
+   two read as the same kind of thing. The heading is the invitation - without
+   it the piece just sits there and nobody touches it. */
+
+.live {
+  display: grid;
+  grid-template-columns: var(--cols);
+  row-gap: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+.live > * { grid-column: content; }
+.live > .live-frame { grid-column: full; }
+
+.live-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 1rem;
+}
+
+.live-head h2 {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.live-head p { color: var(--ink-dim); font-size: 0.875rem; }
+
+.live-frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--well);
+  border-block: 1px solid var(--line);
+  /* It is asking to be touched, so say so on the way in. */
+  cursor: crosshair;
+}
+
+/* The sound toggle rides in the stage, bottom right, so it belongs to the
+   record rather than to the page. Off until it is asked. */
+.sleeve-sound {
+  position: absolute;
+  right: clamp(0.75rem, 2cqw, 1.5rem);
+  bottom: clamp(0.75rem, 2cqw, 1.5rem);
+  z-index: 3;
+  appearance: none;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition:
+    background 260ms var(--ease-out),
+    border-color 260ms var(--ease-out);
+}
+
+.sleeve-sound:hover { background: rgba(0, 0, 0, 0.42); border-color: rgba(255, 255, 255, 0.6); }
+.sleeve-sound[aria-pressed="true"] { background: rgba(0, 0, 0, 0.55); border-color: #fff; }
+.sleeve-sound:focus-visible { outline: 1.5px solid #fff; outline-offset: 2px; }
+
+.live-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.live-switch button {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  transition: color 220ms var(--ease-out);
+}
+
+.live-switch button:hover { color: var(--ink-dim); }
+.live-switch button[aria-pressed="true"] { color: var(--ink); }
+.live-switch button:focus-visible { outline: 1px solid var(--ink-faint); outline-offset: 3px; }
+
+
+
+/* Wide framing: a large globe held to the left, copy stacked on the right
+   against the open black. Same scene, different composition. */
+.globe-scene--wide .globe-copy {
+  left: auto;
+  right: 8cqw;              /* more air against the frame edge */
+  top: 50%;
+  translate: 0 -50%;
+  width: 30cqw;
+  text-align: center;       /* the block centres on itself */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.globe-scene--wide .globe-copy h2 {
+  font-size: 3.1cqw;
+  line-height: 1.14;
+}
+.globe-scene--wide .globe-copy p {
+  margin-top: 1.9cqw;
+  font-size: 1.75cqw;
+  line-height: 1.42;
+  max-width: 26cqw;
+}
+.globe-scene--wide .globe-cta {
+  margin-top: 2.9cqw;
+  width: 13cqw;         /* same 2.5:1 */
+  height: 5.2cqw;
+  font-size: 1.68cqw;
+}
+
+
+/* The Plan trip button taps itself: a press and a settle, not a bounce.
+   Ease-in-out both ways so it reads as weight rather than spring. The piece is
+   display:none when hidden, so the animation restarts cleanly every time the
+   globe is shown - which is also why the delay, not a cue, is what places the
+   tap: this clock starts when the piece appears, not when the shader's does.
+   0.9s in, so the whole shot is the tap and the beat after it. */
+.globe-cta {
+  animation: cta-tap 620ms cubic-bezier(0.45, 0, 0.35, 1) 0.9s 1 both;
+  will-change: transform;
+}
+
+@keyframes cta-tap {
+  0%   { transform: scale(1); }
+  28%  { transform: scale(0.945); }   /* the press */
+  52%  { transform: scale(1.022); }   /* the release, barely past */
+  76%  { transform: scale(0.994); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .globe-cta { animation: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   Magnetic grid placeholder
+
+   A lattice of short strokes aimed at a pointer travelling its own closed
+   loop. All the drawing is in grid.js; this only gives it a surface.
+   --------------------------------------------------------------------------- */
+
+.gridfield {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--grid-bg);
+}
+
+.gridfield-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+
+/* ---------------------------------------------------------------------------
+   Construction sheet placeholder
+
+   A 2:1 drawing letterboxed into the 16:9 frame, in four layers that loop
+   open into a stack of offset planes. All the geometry is in umbrella.js;
+   this gives it a ground and the two colours it uses.
+   --------------------------------------------------------------------------- */
+
+.umbrella-sheet {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+
+  background: var(--sheet-paper);
+  color: var(--sheet-ink);
+
+  /* The logo artwork is filled with .paper (umbrella.js: "everything white to
+     .paper"). That token is also the sheet's ground, so the mark was filling
+     with the background and disappearing. Give the mark its own white. */
+  --sheet-mark: #ffffff;
+}
+
+.umbrella-deck {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  transform: scale(var(--umbrella-scale, 1));
+  transform-origin: center;
+}
+
+.umbrella-plane {
+  position: absolute;
+  inset: 0;
+}
+
+.umbrella-plane svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.umbrella-plane .paper { fill: var(--sheet-mark, var(--sheet-paper)); }
+
+/* The plane's own edge, drawn only while the stack is open.
+
+   The two directions are deliberately not symmetrical. Opening can afford the
+   slow linear fade, but on the way back together the planes converge and the
+   edges would otherwise stack into a set of nested rectangles. Closing drops
+   them fast and front-loaded, so they are gone before the planes overlap. */
+.umbrella-edge {
+  position: absolute;
+  inset: 0;
+  border: 1px solid transparent;
+  transition: border-color 220ms cubic-bezier(0.4, 0, 1, 1);   /* closing */
+  pointer-events: none;
+}
+.umbrella-deck.is-open .umbrella-edge {
+  border-color: color-mix(in srgb, var(--sheet-ink) 28%, transparent);
+  transition: border-color 320ms linear;                       /* opening */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .umbrella-plane { transform: none !important; }
+  .umbrella-deck { transform: none; }
+  .umbrella-edge { transition: none; }
+}
+
+/* Block turn. Four frames on the sides of one body; turn.js rotates it.
+   No perspective here on purpose - see the header of turn.js. */
+
+.turnstage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--well);
+  transform-style: preserve-3d;
+}
+
+.turn-body {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.turn-face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+.turn-face img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .turn-body { transition: none !important; }
+}
+
+/* ---------------------------------------------------------------------------
+   Clip pieces
+
+   A trimmed cut of real work playing in the reel frame. Contained, never
+   cropped, on a ground sampled from the clip itself so the letterbox is
+   invisible rather than a pair of bars.
+   --------------------------------------------------------------------------- */
+
+.clip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.clip-video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.clip--paper { background: #cccccc; }   /* sampled from the logo sheet */
+.clip--ink   { background: #000000; }
+.clip--bocci { background: #4a0e06; }   /* sampled from the clip */
+/* Rain blue behind, so there is no flash of the wrong colour before the first
+   frame paints. The clip is 16:9 and fills the frame, so no contain override. */
+.clip--rain  { background: #0143f5; }
+/* Both sampled from the rendered first frame, not the source file: the
+   decode shifts the colour, and the backing has to match what paints. */
+.clip--questrade   { background: #151916; }   /* Questrade's own green-black */
+
+/* The screen recording is 1.897:1 - the shape of the screen it was taken on -
+   and was letterboxing inside the 16:9 frame. It is cut to 16:9 in the encode
+   instead, and punched in: a whole browser page scaled into this frame put the
+   nav at a few pixels tall and left a band of empty page doing nothing, which
+   read as a screenshot next to the other pieces rather than as motion. Each
+   half of the cut is framed on its own subject - the menu panel, then the
+   portraits - so the clip fills the frame at the scale the rest of the reel
+   works at. Nothing to override here: the clip is the shape of the frame. */
+.clip--runnit      { background: #bbce48; }
+.clip--runnit-pink { background: #ff51a9; }
+
+/* ---------------------------------------------------------------------------
+   Temperature picker
+
+   Eight Sleep's onboarding question, rebuilt from the SVG and the clip, laid
+   out landscape instead of 4:5. Sizes are in cqw so the whole thing scales
+   with the frame rather than the viewport. Geometry is from the source file:
+   25px detents, 2px ticks, 16/32px short and tall, a 36x82 rx18 well.
+   --------------------------------------------------------------------------- */
+
+.temp-scene {
+  position: absolute;
+  inset: 0;
+  container-type: inline-size;
+  overflow: hidden;
+  color: #fff;
+
+  /* Three washes, not two. Neutral is its own colour - a deep purple - so the
+     middle of the range reads as a state rather than as the absence of the
+     other two. It sits on the element itself, under the cold and warm washes
+     on ::before and ::after, and its strength is the alpha. */
+  background-color: #08080c;
+  background-image:
+    radial-gradient(125% 100% at 50% 118%,
+      rgba(86, 46, 156, calc(var(--mid) * 0.62)) 0%,
+      rgba(52, 28, 102, calc(var(--mid) * 0.30)) 42%,
+      transparent 74%);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", var(--sans, sans-serif);
+  --v: 0; --cold: 0; --warm: 0; --mid: 1;
+
+  /* One unit drives the ruler. Everything below is a multiple of it, so the
+     whole instrument scales with the frame instead of the viewport. */
+  --detent: 4.6cqw;
+}
+
+/* Tint, not a filter: two washes over the base, each driven by one number,
+   so neutral stays properly black instead of a muddy mix of both. */
+.temp-scene::before,
+.temp-scene::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.temp-scene::before {
+  background: radial-gradient(120% 95% at 50% 115%, #12346e 0%, transparent 72%);
+  opacity: calc(var(--cold) * 0.9);
+}
+.temp-scene::after {
+  background: radial-gradient(120% 95% at 50% 115%, #7a1410 0%, transparent 72%);
+  opacity: calc(var(--warm) * 0.9);
+}
+
+.temp-scene .temp-grain {
+  position: absolute;
+  inset: -50%;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+
+.temp-copy {
+  /* The headline and the chip move together. 16px from the source, scaled by
+     frame width (393 -> 100cqw, so 1px = 0.254cqw), on both axes. */
+  position: absolute;
+  left: 4.07cqw;
+  top: 4.07cqw;
+  z-index: 2;
+  max-width: 46cqw;
+}
+
+.temp-copy h2 {
+  margin: 0;
+  font-size: 3.3cqw;
+  font-weight: 400;
+  line-height: 1.22;
+  letter-spacing: -0.02em;
+}
+
+.temp-chip {
+  /* From Pill.svg: 221 x 25, rx 12.5 (a true stadium), vertical gradient
+     #537BE1 to #3E5AA1 at 15%. Padding is the sparkle's 7.75px inset scaled
+     against the 25px height. */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75cqw;
+  margin: 2.4cqw 0 0;
+  padding: 0 1.15cqw;
+  height: 3.5cqw;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #537BE1 0%, #3E5AA1 100%);
+  background-color: transparent;
+  color: #5878d8;          /* sampled off the reference, not the SVG's #2656D8 */
+  font-size: 1.55cqw;
+  letter-spacing: -0.01em;
+}
+
+/* The 15% is on the fill, not the whole chip, so the text stays at full
+   strength over it. */
+.temp-chip {
+  position: relative;
+  background: none;
+}
+.temp-chip::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, #537BE1 0%, #3E5AA1 100%);
+  opacity: 0.15;
+}
+.temp-chip > * { position: relative; }
+
+.temp-chip svg { width: 1.5cqw; height: 1.5cqw; fill: #2656d8; flex: none; }
+
+/* The ruler sits on the centre line; the handle never moves, the ruler does. */
+.temp-rule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 40%;
+  height: 21cqw;
+  z-index: 2;
+}
+
+/* Holds the sliding track so the mask below can stay still. */
+.temp-ticks {
+  position: absolute;
+  inset: 0;
+
+  /* Cut a hole the width of the capsule. The ticks were showing through its
+     8% fill, which made the selected position look smudged rather than
+     covered. Masking the ticks is right: fattening the capsule's fill to hide
+     them would lose the blur underneath. */
+  --cut: 4.7cqw;
+
+  /* Two masks, intersected: the hole under the capsule, and a fade at both
+     ends. The fade is what stops the ruler looking like it has run out of
+     labels when the handle reaches Cold or Hot - the edges are already gone,
+     so there is no visible emptiness to notice. */
+  -webkit-mask-image:
+    linear-gradient(90deg,
+      #000 calc(50% - var(--cut) - 0.9cqw), transparent calc(50% - var(--cut) + 0.2cqw),
+      transparent calc(50% + var(--cut) - 0.2cqw), #000 calc(50% + var(--cut) + 0.9cqw)),
+    linear-gradient(90deg, transparent 0%, #000 13%, #000 87%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(90deg,
+      #000 calc(50% - var(--cut) - 0.9cqw), transparent calc(50% - var(--cut) + 0.2cqw),
+      transparent calc(50% + var(--cut) - 0.2cqw), #000 calc(50% + var(--cut) + 0.9cqw)),
+    linear-gradient(90deg, transparent 0%, #000 13%, #000 87%, transparent 100%);
+  mask-composite: intersect;
+}
+
+/* The names get the same fade. The wrapper holds still so the mask stays put
+   while the row of labels slides underneath it. */
+.temp-names {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(40% + 21cqw + 2.6cqw);
+  height: 4.4cqw;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 13%, #000 87%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 13%, #000 87%, transparent 100%);
+}
+
+.temp-track {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  height: 100%;          /* ticks centre on this, same line as the handle */
+  will-change: transform;
+}
+
+.temp-labels {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  height: 2.4cqw;
+  will-change: transform;
+}
+
+.temp-track i {
+  position: absolute;
+  top: 50%;
+  width: 0.3cqw;
+  height: 5cqw;
+  translate: -50% -50%;
+  border-radius: 0.15cqw;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.temp-track i.is-major {
+  height: 9.4cqw;
+  background: rgba(255, 255, 255, 0.24);
+}
+
+/* The well behind the handle: 36 x 82, rx 18, 8% white over a blur. */
+.temp-well {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 9.4cqw;
+  height: 20.6cqw;
+  translate: -50% -50%;
+  border-radius: 4.7cqw;
+  /* Heavier blur than the source's 6px - it has more field to work with in
+     landscape. The banding rings this used to show are handled by the grain
+     layer dithering the gradient underneath, not by removing the blur. */
+  background: rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  backdrop-filter: blur(16px) saturate(1.15);
+}
+
+.temp-handle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0.42cqw;
+  height: 9.4cqw;
+  translate: -50% -50%;
+  border-radius: 0.21cqw;
+  background: #fff;
+  /* The source carries a 6px white glow at 64%. */
+  box-shadow: 0 0 2.2cqw rgba(255, 255, 255, 0.64);
+}
+
+.temp-labels span {
+  position: absolute;
+  top: 0;
+  translate: -50% 0;
+  color: #fff;
+  font-size: 3.1cqw;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .temp-track, .temp-labels { transition: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   Footer credits
+
+   Hovering a name shows what the work was, in the space beside the columns.
+   The note is given a fixed place so filling it never moves the footer.
+   --------------------------------------------------------------------------- */
+
+.col li[data-role] {
+  cursor: default;
+  transition: color 200ms var(--ease-out);
+}
+
+/* A linked name should say so on hover, quietly. */
+.col li[data-role] a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 200ms var(--ease-out);
+}
+
+.col li[data-role] a:hover {
+  border-bottom-color: var(--ink-faint);
+}
+
+.col li[data-role]:hover,
+.col li.is-lit {
+  color: var(--ink);
+}
+
+.col li[data-role]:focus-visible {
+  outline: 1px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* While one name is lit the rest step back, so the reading is unambiguous. */
+.cols:hover .col li[data-role]:not(:hover):not(.is-lit) {
+  color: var(--ink-faint);
+}
+
+.cols:hover .col li[data-role]:not(:hover):not(.is-lit) a {
+  border-bottom-color: transparent;
+}
+
+.col-note {
+  /* The last track, whatever its number: pinned so filling the note on hover
+     never moves the columns beside it. Written as -1 rather than a count,
+     because when Elsewhere went this was still pinned to 4 and the explainer
+     had a zero-width implicit column to render in. */
+  grid-column: -2 / -1;
+  align-self: start;
+  max-width: 18rem;
+  margin: 0;
+  color: var(--ink-dim);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  opacity: 0;
+  transform: translateY(0.25rem);
+  transition: opacity 240ms var(--ease-out), transform 240ms var(--ease-out);
+}
+
+.col-note.is-on {
+  opacity: 1;
+  transform: none;
+}
+
+@media (max-width: 640px) {
+  /* No hover to speak of, and no room beside the columns. */
+  .col-note { display: none; }
+}
+
+
+/* ---------------------------------------------------------------------------
+   iPhone Messages
+
+   The frame IS the phone screen, so one unit does everything: --pt is an iOS
+   point, and 393pt is the width of the screen. Every number below is the real
+   measurement in points rather than a guess that looks close.
+
+     bubble radius      18pt, continuous
+     bubble padding     9pt / 13pt
+     body text          17pt / 22pt, -0.41 tracking (SF Pro Text)
+     max bubble width   ~73% of the screen
+     gap, same sender   2pt    gap, new sender   8pt
+
+   Dark, which is what Messages is under the system Dark Mode it has followed
+   since iOS 13. Apple ships no guaranteed hex values - the system colours are
+   adaptive and it documents them as such - so of the four below only two are
+   on firm ground:
+
+     outgoing fill   #0A84FF   systemBlue, dark variant. Documented. The light
+                               build used #0B84FF, which is already within a
+                               point of this, because the iMessage blue is not
+                               quite systemBlue in either mode.
+     label grey      #8E8E93   systemGray, and the one colour Apple gives the
+                               same value in both appearances - so the sender
+                               line, the read receipt and the typing dots did
+                               not change at all.
+     incoming fill   #3B3B3D   measured, not documented. Sits a hair off
+                               systemGray4 dark (#3A3A3C).
+     background      #000000   true black, not a near-black. Messages goes to
+                               black in dark mode rather than to systemBackground
+                               grey, which is why the bubbles read as brightly
+                               as they do.
+   --------------------------------------------------------------------------- */
+
+.msg-scene {
+  --pt: 0.218cqw;               /* was 0.2545 (393pt across). Pulled back a
+                                   little so the bubbles sit smaller in frame. */
+  /* The tail carve paints --msg-bg, so it and the scene must match exactly or
+     the wedge shows its square corner. Fills are tokens for the same reason:
+     the wedge is a second copy of the bubble colour and the two cannot drift. */
+  --msg-bg: #000;
+  --msg-in: #3B3B3D;
+  --msg-out: #0A84FF;
+  --msg-ink: #fff;              /* both bubbles take white text in dark */
+  --msg-grey: #8E8E93;          /* systemGray: unchanged between appearances */
+
+  position: absolute;
+  inset: 0;
+  container-type: inline-size;
+  overflow: hidden;
+  background: var(--msg-bg);
+  color: var(--msg-ink);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  letter-spacing: calc(var(--pt) * -0.41);
+}
+
+/* Who sent it. A small label above the run, which is what the source shows
+   and what iOS uses in a group or for a business - not a contact header. */
+.msg-sender {
+  margin: 0 0 calc(var(--pt) * 3) calc(var(--pt) * 10);
+  color: var(--msg-grey);
+  font-size: calc(var(--pt) * 11);
+  letter-spacing: 0;
+}
+
+/* Thread. Anchored to the bottom, because a conversation grows upward. */
+.msg-thread {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0 calc(var(--pt) * 12) calc(var(--pt) * 17);   /* lifted off the bottom edge */
+}
+
+.msg-row {
+  display: flex;
+  align-items: flex-end;
+  margin-top: calc(var(--pt) * 2);        /* same sender */
+}
+
+/* A class selector beats the user agent's [hidden] rule, so display has to be
+   taken back explicitly or hidden rows keep rendering. */
+.msg-row[hidden] { display: none; }
+.msg-row.is-in  { justify-content: flex-start; }
+.msg-row.is-out { justify-content: flex-end; }
+
+/* A change of sender opens the gap to 8pt. */
+.msg-row.is-out + .msg-row.is-in,
+.msg-row.is-in + .msg-row.is-out { margin-top: calc(var(--pt) * 8); }
+
+.msg-bubble {
+  position: relative;
+  max-width: 73%;
+  font-size: calc(var(--pt) * 17);
+  line-height: calc(var(--pt) * 22);
+  word-wrap: break-word;
+}
+
+/* The shape. Scaled on arrival; the text is not, because at this zoom a 2%
+   scale on live glyphs resamples them and reads as the text jumping. iMessage
+   scales the whole bubble, but at phone size that is imperceptible on the
+   text - here only the shape needs it. */
+.msg-skin {
+  position: absolute;
+  inset: 0;
+  border-radius: calc(var(--pt) * 18);
+  transform-origin: left bottom;
+}
+
+.msg-text {
+  position: relative;
+  display: block;
+  padding: calc(var(--pt) * 9) calc(var(--pt) * 13);
+}
+
+.is-in .msg-skin  { background: var(--msg-in); }
+.is-out .msg-skin { background: var(--msg-out); }
+.is-in .msg-bubble  { color: var(--msg-ink); }
+.is-out .msg-bubble { color: var(--msg-ink); }
+
+/* The tail. A wedge off the bottom corner, then a carve of the page colour
+   that rounds its outer edge away.
+
+   The carve must be WIDER than the wedge and start further out. A small carve
+   leaves the wedge square on its far side, which reads as a detached blob
+   instead of a tail - that was the glitch. */
+.has-tail .msg-skin::before,
+.has-tail .msg-skin::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  bottom: calc(var(--pt) * -1);
+  height: calc(var(--pt) * 20);
+}
+
+.is-in .has-tail .msg-skin::before {            /* wedge */
+  left: calc(var(--pt) * -7);
+  width: calc(var(--pt) * 20);
+  background: var(--msg-in);
+  border-bottom-right-radius: calc(var(--pt) * 15);
+}
+.is-in .has-tail .msg-skin::after {             /* carve */
+  left: calc(var(--pt) * -26);
+  width: calc(var(--pt) * 26);
+  background: var(--msg-bg);
+  border-bottom-right-radius: calc(var(--pt) * 10);
+}
+
+.is-out .has-tail .msg-skin::before {
+  right: calc(var(--pt) * -7);
+  width: calc(var(--pt) * 20);
+  background: var(--msg-out);
+  border-bottom-left-radius: calc(var(--pt) * 15);
+}
+.is-out .has-tail .msg-skin::after {
+  right: calc(var(--pt) * -26);
+  width: calc(var(--pt) * 26);
+  background: var(--msg-bg);
+  border-bottom-left-radius: calc(var(--pt) * 10);
+}
+
+/* The pseudo-elements sit behind, so the bubble needs its own stacking
+   context or they vanish under the thread background. */
+.msg-bubble { isolation: isolate; }
+.msg-row { position: relative; z-index: 0; }
+
+.msg-read {
+  margin: calc(var(--pt) * 3) 0 0;
+  color: var(--msg-grey);
+  font-size: calc(var(--pt) * 11);
+  text-align: right;
+  letter-spacing: 0;
+}
+
+/* Typing indicator: 3 dots, 8pt, 5pt apart, in a 60 x 36pt bubble. The wave
+   is opacity and a slight lift, 1.4s, each dot a third behind the last. */
+.msg-typing .msg-bubble {
+  transform: translateY(calc((1 - var(--k, 1)) * var(--pt) * 11));
+  opacity: var(--k, 1);
+}
+
+/* While it is waiting, the indicator breathes. iOS gives it a slow, shallow
+   pulse under the dots - without it the bubble sits dead still and only the
+   dots move, which is the tell. */
+.msg-typing .msg-skin {
+  animation: msg-breathe 1.9s ease-in-out infinite;
+}
+
+@keyframes msg-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.035); }
+}
+
+/* The arriving bubble's shape scales very slightly as it lands, overshooting
+   with the spring. Text excluded, as above. */
+.msg-new .msg-skin {
+  transform: scale(calc(0.9 + 0.1 * var(--k)));
+}
+
+ /* The dots live inside the text layer now, so the row and the padding have
+    to be there - leaving them on the bubble is what collapsed them. */
+.msg-dots .msg-text {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--pt) * 5);
+  padding: calc(var(--pt) * 14);
+}
+
+.msg-dots i {
+  width: calc(var(--pt) * 8);
+  height: calc(var(--pt) * 8);
+  border-radius: 50%;
+  background: var(--msg-grey);
+  animation: msg-dot 1.4s ease-in-out infinite;
+}
+.msg-dots i:nth-child(2) { animation-delay: 0.18s; }
+.msg-dots i:nth-child(3) { animation-delay: 0.36s; }
+
+@keyframes msg-dot {
+  0%, 60%, 100% { opacity: 0.42; transform: translateY(0); }
+  30%           { opacity: 1;    transform: translateY(calc(var(--pt) * -2)); }
+}
+
+/* Arrival. The bubble scales from its own bottom corner, which is where iOS
+   grows it from, and the row opens its height at the same time so the thread
+   above slides up rather than jumping. */
+.msg-new { --k: 0; }
+
+.msg-new .msg-bubble {
+  /* Translate and fade. Not scale.
+
+     Scaling a bubble scales the text inside it, and the spring overshoots
+     about 5% past full size, so the glyphs grow past where they belong and
+     snap back - resampled at every step. That is the jump after a message
+     lands. Moving the bubble instead leaves the text untouched at its final
+     size for the whole arrival, and the spring's overshoot becomes a small
+     rise past the resting position rather than a wobble in the letterforms. */
+  transform: translateY(calc((1 - var(--k)) * var(--pt) * 14));
+  opacity: min(1, var(--k));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .msg-dots i { animation: none; opacity: 0.6; }
+  .msg-new .msg-bubble { transform: none; opacity: 1; }
+}
+
+/* ---------------------------------------------------------------------------
+   Protocol
+
+   The Eight Sleep onboarding checklist, out of the phone and laid across the
+   16:9 frame. Four steps of the source's nine.
+
+   Everything visual is here. protocol.js owns the clock and writes only
+   opacity, one transform and the ring's dash offset — no layout, no colour.
+   Sizing is container units throughout, so the piece holds its proportions in
+   the reel well and full bleed on the scratch page alike.
+   --------------------------------------------------------------------------- */
+.protocol-frame {
+  /* The bullet sizes with the type, and the rest of the row sizes off it. */
+  --mark: clamp(22px, 2.7cqw, 52px);
+  background: var(--protocol-bg);
+  /* Everything sizes off the frame, not the viewport, so the piece holds its
+     proportions whatever it is dropped into. */
+  container-type: inline-size;
+}
+/* The list runs past the top and bottom of the frame, so it is faded out
+   rather than cut. Scrims in the frame's own colour rather than a mask: a
+   mask would punch through the frame itself and let the page show through. */
+.protocol-frame::before,
+.protocol-frame::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  height: 20%;
+  pointer-events: none;
+  z-index: 1;
+}
+.protocol-frame.is-contained::before,
+.protocol-frame.is-contained::after { display: none; }
+.protocol-frame::before { top: 0; background: linear-gradient(to bottom, var(--protocol-bg), transparent); }
+.protocol-frame::after { bottom: 0; background: linear-gradient(to top, var(--protocol-bg), transparent); }
+/* Landscape recut: the column sits a third down and takes a wide measure,
+   which is the whole difference from the 4:5 original. */
+.protocol-col {
+  position: absolute;
+  top: 47%;
+  left: clamp(1.75rem, 7%, 7rem);
+  /* The display size is set here rather than on the row so that ch resolves
+     against it — set on the text it would be measured against the inherited
+     16px and the measure would come out a third of its intended width.
+     Sized against the frame's height, not its width: what has to come out
+     right is how many steps are on screen at once, which is a vertical
+     count. Seven or so, as in the source.
+     A short measure on purpose too. The source sets most steps over two
+     lines, and that two line rhythm is what gives the list its pitch — at
+     one line per step nine steps cannot fill a page and the travel goes. */
+  font-size: clamp(1.1rem, 3.7cqw, 4.5rem);
+  width: min(30ch, 66%);
+  will-change: transform;
+}
+.protocol-col.is-still { position: static; padding: 3rem clamp(1.75rem, 7%, 6rem); }
+
+.protocol-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--mark) 1fr;
+  gap: 0 calc(var(--mark) * 0.7);
+  align-items: start;
+  padding-block: 1.15cqw;
+  /* No transition here on purpose: the script sets this every frame, and a
+     transition chasing a per-frame value lags it and makes the approach
+     stutter rather than smoothing it. */
+}
+/* The connector. One per row, spanning that row's bullet to the next, with
+   its length set from the measured pitch. Scaled from the top so it reads as
+   a line travelling down to the step it is about to start. */
+.protocol-link {
+  position: absolute;   /* left and height are measured in, not declared */
+  width: 1px;
+  background: var(--protocol-rail);
+  transform-origin: 50% 0;
+  transform: scaleY(0);
+}
+
+.protocol-mark {
+  position: relative;
+  width: var(--mark); height: var(--mark);
+  /* Optically centres the ring on the first line of text at this size. */
+  margin-top: 0.18em;
+  overflow: visible;
+  fill: none;
+}
+.protocol-track { stroke: var(--protocol-rail); stroke-width: 1.5; }
+.protocol-arc {
+  stroke: var(--protocol-ink);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 16px 16px;
+}
+.protocol-disc { fill: var(--protocol-disc); opacity: 0; transition: opacity 180ms var(--ease-out); }
+.protocol-tick {
+  stroke: var(--protocol-ink);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+  transition: opacity 180ms var(--ease-out) 60ms;
+}
+.is-done .protocol-disc { opacity: 1; }
+.is-done .protocol-tick { opacity: 1; }
+/* Under the disc the completed arc and track would only muddy the edge. */
+.is-done .protocol-arc,
+.is-done .protocol-track { opacity: 0; }
+
+.protocol-text {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: inherit;
+  line-height: 1.38;
+  letter-spacing: -0.012em;
+  color: var(--protocol-ink);
+  text-wrap: pretty;
+}
+
+/* Visually hidden: the live region speaks the current step and nothing else. */
+.protocol-live {
+  position: absolute; width: 1px; height: 1px;
+  margin: -1px; padding: 0; border: 0;
+  clip-path: inset(50%); overflow: hidden; white-space: nowrap;
+}
+
+/* At phone width a 16:9 well is about two rows tall, which reads as a crop
+   rather than a list. The frame gets squarer so three rows and the horizon
+   still fit; the piece is horizontal in its proportions, not its height. */
+/* A phone is too narrow for 16:9 to hold more than two steps, so the frame
+   squares up there. The piece is horizontal in its composition — a wide
+   measure set against open space to its right — not in its aspect alone. */
+@media (max-width: 40rem) {
+  .immersive .protocol-frame { aspect-ratio: 3 / 4; }
+  .protocol-col { width: min(30ch, 86%); left: clamp(1rem, 6%, 2rem); }
+}
+
+/* The still version. Keyed off a class the script sets rather than the media
+   query directly, so the CSS and the script can never disagree about which
+   version is on screen. No scroll-inside-a-frame either: the frame takes
+   whatever height the nine finished rows need. */
+/* .immersive makes the figure full bleed, which is what we want — but its
+   100svh would stand the piece up as a portrait column. The frame keeps a
+   landscape shape and takes its height from its width. */
+.immersive .protocol-frame { height: auto; aspect-ratio: 16 / 9; }
+.protocol-frame.is-still,
+.immersive .protocol-frame.is-still { aspect-ratio: auto; height: auto; overflow: visible; }
+.protocol-frame.is-still::before,
+.protocol-frame.is-still::after { display: none; }
+.protocol-frame.is-still .protocol-row,
+.protocol-frame.is-still .protocol-disc,
+.protocol-frame.is-still .protocol-tick { transition: none; }
+
+/* One frame with every transition off, so the reel can cut into the middle of
+   a piece instead of sliding into it. The class goes on the piece's own root,
+   which is what a piece is handed at mount - not on any inner frame.
+
+   Scoped to the children: the piece's own transform is how the reel pushes it
+   on and off, and that one must still ease. */
+.piece.is-cut * { transition: none !important; }
+/* Thermostat. Like protocol it is dark on dark by nature, so it carries its
+   own palette rather than borrowing the page's.
+
+   The vertical rhythm is taken off the SVG of the card, as fractions of the
+   card's own height: rule 14%, detent values 23%, detent rules 29%, labels
+   35%, the gradient starts 39%, CURRENTLY AT 50%, the reading 66%, the
+   target line 82%. The card in the SVG is very nearly square and this one is
+   16:9, so type sizes off cqh rather than cqw - that is what keeps those
+   fractions meaning the same thing at a different shape. */
+.therm-frame {
+  --rest-glow: #8567ab;  --rest-mid: #584570;  --rest-top: #1d1a20;
+  --warm-glow: #ae3348;  --warm-mid: #71222f;  --warm-top: #201618;
+  --cool-glow: #2b56c8;  --cool-mid: #1b3881;  --cool-top: #151922;
+
+  --card: #0a0a0a;              /* the card's own ground, straight from the SVG */
+  --tab-warm: #d94f51;
+  --tab-cool: #4f7fff;
+  --ink: #ffffff;               /* the only ink; every lesser state is this at opacity */
+  --rule: rgba(255, 255, 255, 0.18);
+  --pad: 5.3cqw;                /* the card's side padding in the SVG */
+
+  --v: 0; --warm: 0; --cool: 0; --mix: 0.5;
+
+  background: var(--card);
+  /* Everything sizes off the frame, not the viewport, so the piece is the
+     same at 16:9 in the lab as it would be full bleed. */
+  container-type: size;
+  font-family: var(--sans);
+  color: var(--ink);
+}
+
+/* The colour pools low and centre and falls off to nothing well before the
+   detents. It fades to transparent rather than to its own dark stop, so the
+   card's black shows through above it and there is no seam to line up -
+   which is the whole reason the top band in the SVG reads as flat. The
+   ellipse is sized so the colour stops rising at about 42% of the card,
+   just under the detent labels, where the SVG starts it. */
+.therm-ground, .therm-ground i, .therm-field { position: absolute; inset: 0; }
+.therm-ground i { display: block; }
+/* The CSS gradients are the fallback and stay as they were. Once the shader
+   is up they come out, rather than being painted over. */
+.therm-field { display: none; width: 100%; height: 100%; }
+.therm-frame.is-shaded .therm-field { display: block; }
+.therm-frame.is-shaded .therm-rest,
+.therm-frame.is-shaded .therm-warm,
+.therm-frame.is-shaded .therm-cool { display: none; }
+.therm-rest { background: radial-gradient(ellipse 82% 64% at 50% 106%, var(--rest-glow), var(--rest-mid) 42%, var(--rest-top) 74%, transparent 94%); }
+.therm-warm { background: radial-gradient(ellipse 82% 64% at 50% 106%, var(--warm-glow), var(--warm-mid) 42%, var(--warm-top) 74%, transparent 94%); opacity: var(--warm); }
+.therm-cool { background: radial-gradient(ellipse 82% 64% at 50% 106%, var(--cool-glow), var(--cool-mid) 42%, var(--cool-top) 74%, transparent 94%); opacity: var(--cool); }
+
+.therm-eyebrow, .therm-tabs, .therm-read { position: absolute; z-index: 1; }
+
+.therm-eyebrow {
+  top: 6cqh; left: var(--pad); right: var(--pad);
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 0;
+  padding-bottom: 3.7cqh;       /* lands the rule at 14% of the card */
+  border-bottom: 1px solid var(--rule);
+  font-size: 2.7cqh;
+  font-weight: 500;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.therm-eyebrow svg { width: 2.1cqh; height: auto; }
+
+/* The detents, on the flat black above the pool. In the SVG these are a
+   squeezed row on a 393px screen; given the width they spend it on room
+   between the three rather than on moving. */
+.therm-tabs {
+  left: var(--pad); right: var(--pad); top: 19.5cqh;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0 2.4cqh;
+  text-align: center;
+}
+/* Full colour on all three: in the SVG only the labels dim, the values do
+   not - the colour is the reading, so dimming it would be dimming data. */
+.therm-tab b {
+  display: block;
+  font-size: 4.6cqh;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.72);
+}
+.therm-tab b.is-warm { color: var(--tab-warm); }
+.therm-tab b.is-cool { color: var(--tab-cool); }
+
+/* Now's value counts with the reading, so it is a cell with digits handing
+   over inside it rather than a piece of text, same as the dial. */
+.therm-tab.is-live b {
+  display: grid;
+  place-items: center;
+  /* Mixed, not switched. Zero is plainly purple in the clip - the two ends
+     meeting - and a red/white/blue switch loses that entirely. --mix runs 0
+     at the cold end to 1 at the warm one, so 0.5 is the blend. */
+  color: color-mix(in srgb,
+    var(--tab-warm) calc(var(--mix, 0.5) * 100%), var(--tab-cool));
+}
+.therm-tabnum {
+  grid-area: 1 / 1;
+  /* The same handover as the reading: out fast, in behind it. */
+  transition: opacity 100ms var(--ease-in-out) 60ms,
+              transform 100ms var(--ease-in-out) 60ms;
+}
+.therm-tabnum.is-out {
+  transition: opacity 70ms var(--ease-in-out) 0ms,
+              transform 70ms var(--ease-in-out) 0ms;
+}
+.therm-tabnum.is-in[data-dir="up"]    { opacity: 0; transform: translateY(40%); }
+.therm-tabnum.is-in[data-dir="down"]  { opacity: 0; transform: translateY(-40%); }
+.therm-tabnum.is-out[data-dir="up"]   { opacity: 0; transform: translateY(-40%); }
+.therm-tabnum.is-out[data-dir="down"] { opacity: 0; transform: translateY(40%); }
+/* The active rule is both brighter and heavier, as drawn. */
+.therm-tab s {
+  display: block;
+  height: 1px;
+  margin-block: 2.4cqh 3.2cqh;
+  background: var(--rule);
+}
+.therm-tab.is-live s { height: 2px; margin-block: 2.4cqh calc(3.2cqh - 1px); background: var(--ink); }
+.therm-tab em {
+  font-style: normal;
+  font-size: 4.4cqh;
+  color: rgba(255, 255, 255, 0.46);
+}
+.therm-tab.is-live em { color: var(--ink); }
+
+/* The reading sits in the pool. CURRENTLY AT over the big number and the
+   target under it, which is the order in the SVG - the number is where the
+   bed is, not where it is going. */
+.therm-read {
+  left: 0; right: 0; top: 48cqh;
+  text-align: center;
+}
+.therm-state, .therm-target {
+  margin: 0;
+  font-size: 2.8cqh;
+  letter-spacing: 0.19em;
+  text-transform: uppercase;
+}
+.therm-state { color: rgba(255, 255, 255, 0.58); }
+.therm-target { color: rgba(255, 255, 255, 0.3); }
+
+/* The keys are placed off the card's centre line, not laid out beside the
+   digit. In a flex row they were positioned by the digit's width, so "-5"
+   shoved them apart and "0" let them back in and the pair twitched sideways
+   on every other step. Their distance from the centre is now a constant. */
+.therm-dial {
+  position: relative;
+  display: grid;
+  place-items: center;
+  /* Set so the number's centre lands at 66% of the card and the target line
+     at 82%, which is where the SVG puts them. */
+  margin-block: 4.6cqh;
+}
+/* Not buttons: nothing here is operable, it is a recording of something
+   being operated. They are the SVG's keys, drawn - and its glyphs are two
+   hairline strokes, not a hyphen and a plus set in the body face. */
+.therm-key {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  width: 16.4cqh; height: 16.4cqh;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.09);
+}
+.therm-key::before,
+.therm-key::after {
+  content: '';
+  position: absolute; inset: 50% 32%;
+  height: 1.6px;
+  margin-top: -0.8px;
+  background: var(--ink);
+  border-radius: 1px;
+}
+.therm-key::after { display: none; }
+.therm-key.is-plus::after { display: block; transform: rotate(90deg); }
+/* 13cqh of clearance from the centre line, which is the SVG's circle-to-digit
+   gap and wider than the broadest reading the dial can show. */
+.therm-key:not(.is-plus) { right: calc(50% + 13cqh); }
+.therm-key.is-plus       { left:  calc(50% + 13cqh); }
+
+/* The digit stack. Both the outgoing and incoming number occupy the same
+   cell so neither pushes the other, and the dial never reflows mid-count. */
+/* No min-width any more: nothing is laid out against this box, so it is free
+   to be exactly as wide as the number in it. */
+.therm-value {
+  display: grid;
+  place-items: center;
+}
+.therm-digit {
+  grid-area: 1 / 1;
+  /* Light and tall, as drawn. The SVG's number is not a bold weight; it is
+     a large one. */
+  font-size: 18cqh;
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  /* Not a crossfade. The two digits on the same clock sat at half opacity
+     over each other through the middle of every change, which read as a
+     doubled number rather than a replaced one. The old one now leaves first
+     and the new one waits for it: out over 70ms, in over 100ms behind a 60ms
+     delay, so the cell is all but clear at the moment the new digit starts.
+     The whole handover is 160ms, inside the 180ms tightest step in the loop. */
+  transition: opacity 100ms var(--ease-in-out) 60ms,
+              transform 100ms var(--ease-in-out) 60ms;
+}
+/* Leaving is quicker than arriving, and starts at once. */
+.therm-digit.is-out {
+  transition: opacity 70ms var(--ease-in-out) 0ms,
+              transform 70ms var(--ease-in-out) 0ms;
+}
+/* Arriving from the direction of travel, leaving the same way, so a run of
+   steps reads as one move and not as one flicker per step. */
+.therm-digit.is-in[data-dir="up"]    { opacity: 0; transform: translateY(26%); }
+.therm-digit.is-in[data-dir="down"]  { opacity: 0; transform: translateY(-26%); }
+.therm-digit.is-out[data-dir="up"]   { opacity: 0; transform: translateY(-26%); }
+.therm-digit.is-out[data-dir="down"] { opacity: 0; transform: translateY(26%); }
+
+/* Held on one frame, nothing should look mid-transition. */
+@media (prefers-reduced-motion: reduce) {
+  .therm-digit, .therm-tabnum { transition: none; }
+}
+.loom-canvas { background: #04081c; }
+
+/* ---------------------------------------------------------------------------
+   Sleeve
+
+   A record sleeve turning in the well. sleeve.js owns every transform here,
+   because all of them derive from the measured side length - this file only
+   says what the faces are made of.
+
+   The ground is its own token pair rather than --well: the sleeve needs to sit
+   on something darker than the page so the printed sides stay the brightest
+   thing in the frame, and that holds in either theme.
+   --------------------------------------------------------------------------- */
+
+/* The ground, with a pool of light thrown across it, offset right so it sits
+   behind the sleeve rather than behind the rack. */
+.sleeve-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(76% 62% at 56% 44%, var(--sleeve-ground-lit), transparent 72%),
+    var(--sleeve-ground);
+  transform-style: preserve-3d;
+}
+
+/* top and left are set by sleeve.js: the sleeve is centred in the space to the
+   right of the rack, not in the frame. */
+.sleeve-body {
+  position: absolute;
+  left: 50%;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* Every face is centred on the body - sleeve.js offsets each one by half its
+   own size - so one transform recipe covers the printed sides and the edges
+   alike. The front and back are left at the body's full size. */
+.sleeve-face {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  margin-left: -50%;
+  margin-top: -50%;
+  overflow: hidden;
+  backface-visibility: hidden;
+}
+
+.sleeve-face--front,
+.sleeve-face--back {
+  background: var(--sleeve-edge);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.22);
+}
+
+/* The printed art. Two of these are stacked on the front face so a swap can
+   cross-fade; sleeve.js paints each one with either an image or a flat tone. */
+.sleeve-art {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: 50% 50%;
+  background-repeat: no-repeat;
+}
+
+/* The light moving across the printed side. sleeve.js drives both the opacity
+   and the horizontal travel off the facing angle. */
+.sleeve-sheen {
+  position: absolute;
+  inset: -20% -40%;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    102deg,
+    transparent 28%,
+    rgba(255, 255, 255, 0.30) 44%,
+    rgba(255, 255, 255, 0.62) 50%,
+    rgba(255, 255, 255, 0.30) 56%,
+    transparent 72%);
+}
+
+/* The four paper edges. The left one is the spine - a folded, printed edge, so
+   it is the darker of the two - and the right is the open mouth, which shows
+   the lip of the card and a sliver of the record inside. */
+.sleeve-face--left,
+.sleeve-face--right,
+.sleeve-face--top,
+.sleeve-face--bottom {
+  background: var(--sleeve-edge);
+}
+
+.sleeve-face--left {
+  background: linear-gradient(90deg, var(--sleeve-spine), var(--sleeve-edge));
+}
+
+.sleeve-face--right {
+  background:
+    linear-gradient(90deg,
+      var(--sleeve-edge) 0 38%,
+      var(--sleeve-mouth) 38% 62%,
+      var(--sleeve-edge) 62% 100%);
+}
+
+.sleeve-face--top,
+.sleeve-face--bottom {
+  background: linear-gradient(180deg, var(--sleeve-edge), var(--sleeve-spine));
+}
+
+/* Contact shadow. Not a filter on the body - a blurred ellipse costs nothing
+   and the body is already carrying a transform every frame. */
+.sleeve-shadow {
+  position: absolute;
+  left: 50%;
+  height: 4.5%;
+  border-radius: 50%;
+  background: radial-gradient(50% 50% at 50% 50%, rgba(0, 0, 0, 0.9), transparent 72%);
+  filter: blur(10px);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+/* The crate. A column of covers down the left of the frame - click one and it
+   goes up on the body. sleeve.js sizes the chips and the gap off the frame's
+   height, because the column has to hold however many covers there are without
+   spilling, and it places the column's left edge to match. */
+.sleeve-rack {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.sleeve-chip {
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background-color: var(--sleeve-edge);
+  background-size: cover;
+  background-position: 50% 50%;
+  cursor: pointer;
+  opacity: 0.45;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+  /* The press eases in and out of the dip in both directions, so the give and
+     the release are the same shape and it reads as one bounce rather than a
+     drop followed by a spring. Opacity keeps its own curve - it is a fade, not
+     a movement. */
+  transition:
+    opacity 200ms var(--ease-out),
+    transform 200ms var(--ease-in-out);
+}
+
+.sleeve-chip:hover { opacity: 0.8; transform: scale(1.1); }
+
+/* Pressed. Set while the pointer is down on it and cleared as the cover lands,
+   so the chip gives under the click before it grows into the selected size. */
+.sleeve-chip[data-press="1"],
+.sleeve-chip[aria-pressed="true"][data-press="1"] {
+  transform: scale(0.9);
+  transition-duration: 130ms;
+  transition-timing-function: var(--ease-in-out);
+}
+
+/* The one on the body. Grown and lit, so the rack always says which record is
+   up without needing a label. It scales in place rather than stepping sideways,
+   which kept nudging the column out of its own line. */
+.sleeve-chip[aria-pressed="true"] {
+  opacity: 1;
+  transform: scale(1.22);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.55),
+    0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+.sleeve-chip:focus-visible {
+  outline: 2px solid var(--sleeve-edge);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sleeve-chip { transition: none; }
+}
+
+/* The pointer that plays the piece.
+
+   It is drawn rather than borrowed from the system cursor, because a real
+   cursor cannot be moved by a page and a screenshot of one would be the wrong
+   size on half the displays it lands on. The arrow carries its own dark outline
+   so it holds up over a pale cover and a dark one alike.
+
+   sleeve.js owns the transform - position and the press scale share it - and
+   everything here is the look. The press is carried by the arrow and the chip
+   both dipping, with nothing drawn on top of them. */
+.sleeve-cursor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 22px;
+  height: 22px;
+  margin: -2px 0 0 -2px;   /* the tip, not the box, lands on the target */
+  pointer-events: none;
+  opacity: 0;
+  transform-origin: 3px 3px;
+  transition: opacity 260ms var(--ease-out);
+  will-change: transform;
+  z-index: 2;
+}
+
+.sleeve-cursor svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.sleeve-cursor path {
+  fill: #ffffff;
+  stroke: rgba(0, 0, 0, 0.55);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
+}
+
+.sleeve-cursor[data-on="1"] { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sleeve-cursor { display: none; }
+}
+
+
+/* A reading page ---------------------------------------------------------
+   The blog sets everything in one 40rem column down the middle of the page,
+   and a list of things to read belongs in it. Without this the entries sit
+   hard left against a screen's worth of empty paper. */
+
+/* One measure for the whole page — wide enough for two cards side by side,
+   and the paragraphs inside them keep their own 34em. The masthead and the
+   footer share it so everything lines up on one left edge.
+   main itself has to be widened too: it was capped at the reading measure,
+   and a grid cannot be wider than the column it sits in. */
+.wrap--read > * {
+  width: 100%;
+  max-width: 62rem;
+  margin-inline: auto;
+}
+.wrap--read main > * { width: 100%; max-width: none; }
+
+/* A shade larger than the index, because this is the page you are here to
+   read rather than glance at. */
+.wrap--read .entry h3 { font-size: 17px; }
+.wrap--read .entry p { font-size: 15px; line-height: 1.6; }
+.wrap--read .statement h2 { font-size: 17px; }
+.wrap--read .entries { max-width: none; }
+
+
+/* View transitions ---------------------------------------------------------
+   Navigating from the index into a project is the one piece of motion the
+   site cannot fake, and until now it was a hard cut. The card you click and
+   the frame you land on share a view-transition-name, so the browser morphs
+   one into the other across the page load: the card grows into the hero while
+   everything else crossfades.
+
+   Cross-document, no library, no build step. Browsers without it navigate
+   exactly as before — there is nothing to fall back from. */
+
+@view-transition { navigation: auto; }
+
+/* The pair that morphs. Names must be unique in a document, so each project
+   declares its own on both ends — the card on the index, and the frame on the
+   project page showing the same clip. */
+[data-vt="rain"]        { view-transition-name: vt-rain; }
+[data-vt="runnit"]      { view-transition-name: vt-runnit; }
+[data-vt="specter"]     { view-transition-name: vt-specter; }
+[data-vt="bocci"]       { view-transition-name: vt-bocci; }
+[data-vt="eight-sleep"] { view-transition-name: vt-eight-sleep; }
+
+/* The masthead is NOT named, and must not be. Naming it on both sides pairs
+   two different boxes — a small label top-left on a project page against the
+   full-width bar on the index — so the group spends 480ms animating between
+   them with the new snapshot stretched inside it. That is the faint grey box
+   that was seen opening up behind the page on the way back. The two headers
+   sit in the same place and read the same, so the 200ms root cross-fade
+   carries them with no visible change at all. */
+
+/* The pair is the same picture at two sizes, so only ONE of the two snapshots
+   should be on screen: the new one, carried by the group from where the old
+   one was. Cross-fading them ghosts; keeping both at full opacity (which is
+   what a bare animation:none does) leaves the old one covering the new for
+   the whole transition and then popping off at the end. */
+::view-transition-old(vt-rain),
+::view-transition-old(vt-runnit),
+::view-transition-old(vt-specter),
+::view-transition-old(vt-bocci),
+::view-transition-old(vt-eight-sleep) {
+  animation: none;
+  opacity: 0;
+}
+::view-transition-new(vt-rain),
+::view-transition-new(vt-runnit),
+::view-transition-new(vt-specter),
+::view-transition-new(vt-bocci),
+::view-transition-new(vt-eight-sleep) {
+  animation: none;
+  opacity: 1;
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+
+/* The curve has to leave immediately. --ease-in-out spends its first third
+   barely moving, and on a 560ms morph that dead start is read as a hold
+   before the frame goes anywhere. This one is at speed from the first frame
+   and decelerates into place — the move feels like a response to the click
+   rather than something that had to think about it first. */
+::view-transition-group(*) {
+  animation-duration: 480ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* The ground is out of the way before the frame has finished arriving. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 200ms;
+  animation-timing-function: var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation-duration: 1ms; }
+}
+
+/* Explorations ------------------------------------------------------------
+   Two cards rather than two rows of text. A list of writing on a motion
+   designer's site should still show the thing being written about — the same
+   frame treatment as the work, so the two halves of the site match. */
+
+.entries {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1.25rem, 3vw, 2.5rem);
+  max-width: none;
+}
+
+.entry { display: block; text-decoration: none; }
+
+/* The lift goes on the clipping box, not on the thing inside it: a shadow
+   cast by a child of an overflow:hidden parent is clipped away with it. */
+.entry-frame {
+  display: block;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--frame-lift);
+}
+.entry-frame > video,
+.entry-frame > img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: var(--well);
+  transition: transform 520ms var(--ease-snap);
+}
+.entry:hover .entry-frame > * { transform: scale(1.02); }
+
+.entry-top {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-top: 0.9rem;
+}
+.entry h3 {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+}
+.entry time {
+  margin-left: auto;
+  flex: none;
+  color: var(--ink-faint);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+.entry p {
+  margin-top: 0.3rem;
+  max-width: 34em;
+  color: var(--ink-dim);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+@media (max-width: 720px) {
+  .entries { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* The masthead on the new pages matches the index: 17px, ink, not grey.
+   The name keeps its own larger size — it is the one thing that is a mark
+   rather than a label. */
+.wrap--read .masthead .nav a,
+.wrap--work .masthead .nav a,
+.wrap--read .masthead .role,
+.wrap--work .masthead .role {
+  font-size: 17px;
+  color: var(--ink);
+}
+.wrap--read .masthead .nav,
+.wrap--work .masthead .nav { gap: 2rem; }
+
+/* The name was smaller than the nav beside it. It matches the index's
+   wordmark instead. */
+.wrap--read .masthead h1,
+.wrap--work .masthead h1 {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+/* Masthead: nav only, no name -------------------------------------------
+   Used by the index and by Explorations. The name is not repeated up here —
+   the nav is the way back, and the page says who it belongs to once. */
+
+.topbar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+  padding-top: clamp(1.25rem, 3vw, 2.25rem);
+  font-size: 17px;
+}
+.topbar .nav { display: flex; gap: 2rem; }
+/* style.css sets .nav a to 13px for the inner pages, so the size has to be
+   stated here rather than inherited from .topbar. */
+.topbar .nav a { font-size: 17px; color: var(--ink); }
+/* The role keeps the same size as the nav so the masthead reads as one line
+   rather than two things of different weight. */
+.topbar .role { color: var(--ink); font-size: 17px; text-align: right; }
+
+
+/* No entrance stagger when the page was reached through a view transition. */
+.is-arriving [data-rise] {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+
+/* Going back -------------------------------------------------------------
+   Out is not in reversed. Coming in, one frame travels and the page under it
+   gets out of the way. Going back there is nothing to carry, so the pages
+   themselves do the work: the project you are leaving pushes away from you
+   and the index rises back up from just behind it.
+
+   A plain cross-fade reads as a flicker because both pages are mostly white —
+   there is nothing to see fading. Giving each a small, opposite scale is what
+   makes it read as a movement rather than a flash. */
+
+@keyframes md-back-out {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(1.04); }
+}
+@keyframes md-back-in {
+  /* No opacity here on purpose. Fading BOTH pages at once leaves a window
+     where each is half transparent and the white page behind shows through both
+     — that is the flash. The incoming page is opaque from the first frame and
+     the outgoing one fades away on top of it, so there is never a gap. */
+  from { transform: scale(0.99); }
+  to   { transform: none; }
+}
+
+/* On the way back, NO element carries a shared name — not on either side.
+   Releasing it in JS on the outgoing page only works when a link was clicked;
+   with the browser's own back button, popstate fires after the navigation has
+   already begun and the snapshot has been taken. This runs in the incoming
+   document during pagereveal, before its snapshot, so the pair can never be
+   formed and the hero cannot fly across the index. */
+:root.is-back [data-vt] { view-transition-name: none !important; }
+
+:root.is-back::view-transition-old(root) {
+  animation: md-back-out 340ms var(--ease-out) both;
+  transform-origin: 50% 40%;
+  /* Above the incoming page, so its fade is what reveals it. */
+  z-index: 1;
+}
+:root.is-back::view-transition-new(root) {
+  animation: md-back-in 420ms var(--ease-out) both;
+  transform-origin: 50% 40%;
+  z-index: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root.is-back::view-transition-old(root),
+  :root.is-back::view-transition-new(root) { animation-duration: 1ms; }
+}
+
+/* A collaborator in the spec is a link out to them. */
+.spec dd a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 150ms var(--ease-out);
+}
+.spec dd a:hover { text-decoration-color: var(--ink); }

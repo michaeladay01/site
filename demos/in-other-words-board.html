@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>In Other Words — live demo</title>
+<style>
+  /* The app's own palette (Theme.swift / Palette). */
+  :root {
+    --paper: #FFFFFF;
+    --ink: #000000;
+    --gold: #E8B93C;
+    --parcel: #E5E3DA;
+    --entry: #F7E7BF;   /* gold mixed 65% with white */
+    --solved: #D3E8C8;  /* right words: soft green */
+    --solved-entry: #A9CC9D;  /* a right word that's selected */
+    --kb: #E2E3E7;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: transparent; }
+  body { display: grid; place-items: center; font-family: var(--font); -webkit-font-smoothing: antialiased; }
+
+  /* The phone, drawn at the iPhone 17 Pro's 402 × 874 points and scaled to fit. */
+  .stage { width: 100%; height: 100%; display: grid; place-items: center; overflow: hidden; }
+  .device {
+    width: 402px; height: 874px; position: relative; flex: none;
+    border-radius: 62px; background: var(--paper); overflow: hidden;
+    box-shadow: 0 0 0 11px #111, 0 0 0 12.5px #3a3a3c, 0 30px 80px rgba(0,0,0,.25);
+    transform-origin: center; user-select: none; -webkit-user-select: none;
+    color: var(--ink);
+  }
+  .status { position: absolute; inset: 0 0 auto 0; height: 54px; z-index: 50; pointer-events: none; }
+  .status .time { position: absolute; left: 48px; top: 19px; font: 600 17px var(--font); letter-spacing: -.2px; }
+  .status .island { position: absolute; left: 50%; top: 11px; width: 126px; height: 37px; margin-left: -63px; background: #000; border-radius: 20px; }
+  .status .right { position: absolute; right: 34px; top: 21px; display: flex; gap: 6px; align-items: center; }
+  .status .batt { width: 27px; height: 13px; border-radius: 4px; border: 1.5px solid rgba(0,0,0,.4); padding: 1.5px; }
+  .status .batt i { display: block; height: 100%; width: 100%; background: var(--ink); border-radius: 2px; }
+
+  .page { position: absolute; inset: 0; background: var(--paper); will-change: transform; }
+
+  /* ---------- Home ---------- */
+  .home-inner { position: absolute; inset: 62px 16px 0 16px; display: flex; flex-direction: column; gap: 12px; }
+  .masthead { text-align: center; padding-top: 4px; }
+  .masthead h1 { margin: 8px 0 0; font: 800 42px/1.1 var(--font); letter-spacing: -1.6px; }
+  .masthead p { margin: 2px 0 18px; font: 400 19px var(--font); color: rgba(0,0,0,.5); }
+  .card { border-radius: 6px; cursor: pointer; transform-origin: center; will-change: transform; }
+  .stats { background: var(--parcel); display: flex; padding: 26px 12px; position: relative; }
+  .stats > div { flex: 1; text-align: center; }
+  .stats b { display: block; font: 500 26px var(--font); font-variant-numeric: tabular-nums; letter-spacing: .3px; }
+  .stats span { display: block; font: 500 15px var(--font); opacity: .6; margin-top: 1px; }
+  .stats .arrow { position: absolute; right: 12px; top: 12px; opacity: .35; }
+  .today { background: var(--gold); padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+  .board { background: var(--ink); padding: 3px; display: grid; gap: 3px; }
+  .board i { background: #fff; aspect-ratio: 1; position: relative; font: 500 9px var(--font); color: rgba(0,0,0,.6); font-style: normal; }
+  .board i.b { background: var(--ink); }
+  .board i em { position: absolute; left: 3px; top: 2px; font-style: normal; }
+  .today-foot { display: flex; align-items: center; }
+  .today-foot h2 { margin: 0; font: 700 26px/1.15 var(--font); letter-spacing: -.6px; flex: 1; }
+  .today-foot h2 span { display: block; opacity: .4; }
+  .play { width: 48px; height: 48px; border-radius: 50%; background: var(--ink); display: grid; place-items: center; }
+  .tabbar {
+    position: absolute; left: 50%; bottom: 34px; transform: translateX(-50%); display: flex; gap: 6px; padding: 6px;
+    border-radius: 999px; background: rgba(255,255,255,.72); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%);
+    box-shadow: 0 8px 30px rgba(0,0,0,.08), inset 0 0 0 .5px rgba(255,255,255,.9); z-index: 5;
+  }
+  .tabbar span { width: 64px; height: 48px; border-radius: 999px; display: grid; place-items: center; color: #8D8C8A; position: relative; }
+  .tabbar span.on { background: rgba(0,0,0,.07); color: var(--ink); }
+  .tabbar .dot { position: absolute; right: 16px; top: 10px; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); }
+
+  /* ---------- Solver ---------- */
+  .top { position: absolute; left: 0; right: 0; top: 62px; height: 44px; display: flex; align-items: center; padding: 0 16px 0 20px; }
+  .back { width: 40px; height: 40px; display: grid; place-items: center; margin-left: -12px; cursor: pointer; }
+  .timer { font: 600 19px var(--font); font-variant-numeric: tabular-nums; flex: 1; letter-spacing: .2px; }
+  .bulb { width: 40px; height: 40px; display: grid; place-items: center; margin-right: 8px; }
+  .more { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.8); box-shadow: 0 2px 14px rgba(0,0,0,.1); }
+  .grid { position: absolute; left: 0; top: 114px; background: #000; }
+  .tile { position: absolute; will-change: transform, opacity; cursor: pointer; }
+  .sq { position: absolute; inset: 0; background: #fff; will-change: transform; }
+  .sq em { position: absolute; font-weight: 400; color: rgba(0,0,0,.6); font-style: normal; pointer-events: none; z-index: 2; }
+  .glyph { position: absolute; display: none; pointer-events: none; will-change: transform, opacity; }
+  .glyph b, .ghost b { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 500; line-height: 1; }
+  .ghost { position: absolute; inset: 0; background: #fff; pointer-events: none; z-index: 4; }
+  .ghost b { color: #000; }
+  .clue { position: absolute; left: 0; right: 0; height: 54px; display: flex; align-items: center; padding: 0 16px; }
+  .clue button { all: unset; width: 44px; height: 44px; display: grid; place-items: center; cursor: pointer; }
+  .clue div { flex: 1; text-align: center; font: 600 17px var(--font); letter-spacing: -.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kb { position: absolute; left: 0; right: 0; bottom: 0; height: 291px; background: var(--kb); border-radius: 30px 30px 0 0; padding: 14px 7px 0; }
+  .kb .row { display: flex; justify-content: center; gap: 6px; margin-top: 11px; padding: 0 3px; }
+  .kb .row:first-child { margin-top: 0; }
+  .key { height: 43px; flex: 1 1 0; min-width: 0; max-width: 34px; border-radius: 8.5px; background: #fff; display: grid; place-items: center; font: 400 23px/1 var(--font); padding-bottom: 3px; text-align: center; box-shadow: 0 1px 0 rgba(0,0,0,.28); cursor: pointer; transition: background .06s; }
+  .key:active, .key.down { background: #C6C8CE; }
+  .key.wide { flex: 0 0 43px; max-width: none; background: #fff; }
+  .kb .row:nth-child(2) { padding: 0 22px; }
+  .kb .row:nth-child(3) .key.wide:first-child { margin-right: 8px; }
+  .kb .row:nth-child(3) .key.wide:last-child { margin-left: 8px; }
+  .key.space { flex: 1; max-width: none; }
+  .key.fn { flex: 0 0 92px; max-width: none; font-size: 17px; }
+  .kb .icons { display: flex; justify-content: space-between; padding: 14px 24px 0; opacity: .85; }
+
+  .solved-banner { position: absolute; left: 0; right: 0; text-align: center; font: 700 17px var(--font); opacity: 0; }
+
+  .replay { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); font: 600 12px var(--font); color: rgba(0,0,0,.45); cursor: pointer; z-index: 60; background: none; border: 0; padding: 6px 10px; }
+
+  /* Embedded: the whole app screen, as is, without a phone around it. The page
+     it sits on gives it a light grey box. */
+  html, body { background: transparent; }
+  .device { border-radius: 28px; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 12px 40px rgba(0,0,0,.08); }
+  .replay { display: none; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="device" id="device">
+    <div class="status">
+      <div class="time">9:41</div>
+      <div class="island"></div>
+      <div class="right">
+        <svg width="18" height="12" viewBox="0 0 18 12"><path fill="#000000" d="M9 2.6c2.4 0 4.6.9 6.3 2.5l1.3-1.3A10.7 10.7 0 0 0 9 .7C6.1.7 3.5 1.8 1.4 3.8l1.3 1.3A8.8 8.8 0 0 1 9 2.6Zm0 3.7c1.4 0 2.7.5 3.7 1.4l1.3-1.3A7.1 7.1 0 0 0 9 4.4c-1.9 0-3.6.7-5 2l1.3 1.3c1-.9 2.3-1.4 3.7-1.4Zm0 3.5L11.2 7.6A3.2 3.2 0 0 0 9 8.4c-.8 0-1.6.3-2.2.8L9 11.4Z"/></svg>
+        <div class="batt"><i></i></div>
+      </div>
+    </div>
+
+    <!-- Home -->
+    <div class="page" id="home">
+      <div class="home-inner">
+        <div class="masthead">
+          <h1>In Other Words</h1>
+          <p id="date">Thursday, November 5</p>
+        </div>
+        <div class="card stats" data-press>
+          <div><b>23</b><span>Day streak</span></div>
+          <div><b>4:36</b><span>Average</span></div>
+          <div><b>131</b><span>Solved</span></div>
+          <svg class="arrow" width="12" height="12" viewBox="0 0 12 12"><path d="M3 9 9 3M4 3h5v5" stroke="#000000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="card today" id="todayCard" data-press>
+          <div class="board" id="homeBoard"></div>
+          <div class="today-foot">
+            <h2>Today<span>Ready to play</span></h2>
+            <div class="play"><svg width="16" height="18" viewBox="0 0 16 18"><path d="M2 1.5v15l13-7.5z" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg></div>
+          </div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <span class="on"><svg width="26" height="26" viewBox="0 0 26 26"><defs><clipPath id="pg"><rect x="1.1" y="1.1" width="23.8" height="23.8" rx="5"/></clipPath></defs><g clip-path="url(#pg)" fill="currentColor"><rect x="17.333" y="0.000" width="8.667" height="8.667"/><rect x="0.000" y="8.667" width="8.667" height="8.667"/><rect x="8.667" y="17.333" width="8.667" height="8.667"/><path d="M8.667 0V26M17.333 0V26M0 8.667H26M0 17.333H26" stroke="currentColor" stroke-width="1.8"/></g><rect x="1.1" y="1.1" width="23.8" height="23.8" rx="5" fill="none" stroke="currentColor" stroke-width="2.86"/></svg></span>
+        <span><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v8h14v-8M12 8v12M12 8c-2-4-6-4-6-1.5S10 8 12 8Zm0 0c2-4 6-4 6-1.5S14 8 12 8Z"/></svg><i class="dot"></i></span>
+        <span><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg></span>
+      </div>
+    </div>
+
+    <!-- Solver -->
+    <div class="page" id="solver" style="transform: translateX(402px)">
+      <div class="top">
+        <div class="back" id="back"><svg width="12" height="20" viewBox="0 0 12 20"><path d="M10 2 2 10l8 8" stroke="#000000" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="timer" id="timer">0:00</div>
+        <div class="bulb"><svg width="20" height="26" viewBox="0 0 20 26" fill="none" stroke="#000000" stroke-width="1.8" stroke-linecap="round"><path d="M6.5 18.5c0-2.6-4.5-4.4-4.5-9a8 8 0 0 1 16 0c0 4.6-4.5 6.4-4.5 9Z"/><path d="M7 21.5h6M8 24.5h4"/></svg></div>
+        <div class="more"><svg width="18" height="4" viewBox="0 0 18 4"><circle cx="2" cy="2" r="2"/><circle cx="9" cy="2" r="2"/><circle cx="16" cy="2" r="2"/></svg></div>
+      </div>
+      <div class="grid" id="grid"></div>
+      <div class="clue" id="clueBar">
+        <button id="prev" aria-label="Previous clue"><svg width="18" height="14" viewBox="0 0 18 14"><path d="M17 7H2m5-6L1 7l6 6" stroke="#000000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <div id="clue"></div>
+        <button id="next" aria-label="Next clue"><svg width="18" height="14" viewBox="0 0 18 14"><path d="M1 7h15m-5-6 6 6-6 6" stroke="#000000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+      <div class="kb" id="kb"></div>
+    </div>
+
+    <button class="replay" id="replay">Replay</button>
+  </div>
+</div>
+
+<script>
+const PUZZLE = {"rows":7,"cols":7,"cells":[{"row":0,"col":1,"solution":"S","number":1,"across":"1-across","down":"1-down"},{"row":0,"col":2,"solution":"A","number":2,"across":"1-across","down":"2-down"},{"row":0,"col":3,"solution":"M","number":3,"across":"1-across","down":"3-down"},{"row":0,"col":4,"solution":"E","number":null,"across":"1-across","down":null},{"row":1,"col":1,"solution":"O","number":null,"across":"4-across","down":"1-down"},{"row":2,"col":1,"solution":"L","number":null,"across":"6-across","down":"1-down"},{"row":3,"col":1,"solution":"A","number":null,"across":"8-across","down":"1-down"},{"row":4,"col":1,"solution":"R","number":null,"across":"11-across","down":"1-down"},{"row":1,"col":2,"solution":"R","number":null,"across":"4-across","down":"2-down"},{"row":2,"col":2,"solution":"O","number":null,"across":"6-across","down":"2-down"},{"row":3,"col":2,"solution":"M","number":null,"across":"8-across","down":"2-down"},{"row":4,"col":2,"solution":"A","number":null,"across":"11-across","down":"2-down"},{"row":1,"col":3,"solution":"E","number":null,"across":"4-across","down":"3-down"},{"row":2,"col":3,"solution":"N","number":null,"across":"6-across","down":"3-down"},{"row":1,"col":0,"solution":"M","number":4,"across":"4-across","down":"4-down"},{"row":2,"col":0,"solution":"A","number":6,"across":"6-across","down":"4-down"},{"row":3,"col":0,"solution":"J","number":8,"across":"8-across","down":"4-down"},{"row":4,"col":0,"solution":"O","number":11,"across":"11-across","down":"4-down"},{"row":5,"col":0,"solution":"R","number":null,"across":null,"down":"4-down"},{"row":1,"col":6,"solution":"E","number":5,"across":null,"down":"5-down"},{"row":2,"col":6,"solution":"G","number":null,"across":null,"down":"5-down"},{"row":3,"col":6,"solution":"O","number":null,"across":"9-across","down":"5-down"},{"row":2,"col":4,"solution":"E","number":7,"across":"6-across","down":"7-down"},{"row":3,"col":4,"solution":"A","number":9,"across":"9-across","down":"7-down"},{"row":4,"col":4,"solution":"G","number":null,"across":"11-across","down":"7-down"},{"row":5,"col":4,"solution":"L","number":null,"across":"13-across","down":"7-down"},{"row":6,"col":4,"solution":"E","number":null,"across":"14-across","down":"7-down"},{"row":3,"col":5,"solution":"D","number":10,"across":"9-across","down":"10-down"},{"row":4,"col":5,"solution":"E","number":null,"across":"11-across","down":"10-down"},{"row":5,"col":5,"solution":"E","number":null,"across":"13-across","down":"10-down"},{"row":6,"col":5,"solution":"R","number":null,"across":"14-across","down":"10-down"},{"row":4,"col":3,"solution":"N","number":12,"across":"11-across","down":"12-down"},{"row":5,"col":3,"solution":"A","number":13,"across":"13-across","down":"12-down"},{"row":6,"col":3,"solution":"P","number":null,"across":"14-across","down":"12-down"},{"row":6,"col":2,"solution":"O","number":14,"across":"14-across","down":null},{"row":6,"col":6,"solution":"A","number":null,"across":"14-across","down":null}],"entries":[{"id":"1-across","row":0,"col":1,"direction":"across","clue":"Identical","answer":"SAME","number":1},{"id":"1-down","row":0,"col":1,"direction":"down","clue":"Sun-powered","answer":"SOLAR","number":1},{"id":"2-down","row":0,"col":2,"direction":"down","clue":"Pleasant smell","answer":"AROMA","number":2},{"id":"3-down","row":0,"col":3,"direction":"down","clue":"Guys","answer":"MEN","number":3},{"id":"4-across","row":1,"col":0,"direction":"across","clue":"Additional","answer":"MORE","number":4},{"id":"4-down","row":1,"col":0,"direction":"down","clue":"College focus","answer":"MAJOR","number":4},{"id":"5-down","row":1,"col":6,"direction":"down","clue":"Self-image","answer":"EGO","number":5},{"id":"6-across","row":2,"col":0,"direction":"across","clue":"\"Home ___\" (1990 film)","answer":"ALONE","number":6},{"id":"7-down","row":2,"col":4,"direction":"down","clue":"Two under par","answer":"EAGLE","number":7},{"id":"8-across","row":3,"col":0,"direction":"across","clue":"Traffic tie-up","answer":"JAM","number":8},{"id":"9-across","row":3,"col":4,"direction":"across","clue":"Fuss","answer":"ADO","number":9},{"id":"10-down","row":3,"col":5,"direction":"down","clue":"Bambi, for one","answer":"DEER","number":10},{"id":"11-across","row":4,"col":0,"direction":"across","clue":"Word with no rhyme","answer":"ORANGE","number":11},{"id":"12-down","row":4,"col":3,"direction":"down","clue":"Short sleep","answer":"NAP","number":12},{"id":"13-across","row":5,"col":3,"direction":"across","clue":"Pub pour","answer":"ALE","number":13},{"id":"14-across","row":6,"col":2,"direction":"across","clue":"\"Carmen,\" for one","answer":"OPERA","number":14}]};
+const W = 402, H = 874;
+
+/* ---------- Motion: the same springs SwiftUI uses ---------- */
+// spring(response:dampingFraction:) as a closed-form damped oscillator, 0 → 1.
+function springAt(t, response, damping) {
+  if (t <= 0) return 0;
+  const w0 = 2 * Math.PI / response, z = damping;
+  if (z >= 1) return 1 - Math.exp(-w0 * t) * (1 + w0 * t);
+  const wd = w0 * Math.sqrt(1 - z * z);
+  return 1 - Math.exp(-z * w0 * t) * (Math.cos(wd * t) + (z * w0 / wd) * Math.sin(wd * t));
+}
+// spring(duration:bounce:) maps onto the same thing.
+const byBounce = (duration, bounce) => ({ response: duration, damping: 1 - bounce });
+
+function animate({ response, damping, delay = 0, onUpdate, onDone }) {
+  const start = performance.now() + delay * 1000;
+  let raf;
+  const step = now => {
+    const t = (now - start) / 1000;
+    const v = springAt(t, response, damping);
+    onUpdate(v);
+    const settled = t > response * 0.6 && Math.abs(1 - v) < 0.0008 && t > 0.05;
+    if (t > 0 && (settled || t > 4)) { onUpdate(1); onDone && onDone(); return; }
+    raf = requestAnimationFrame(step);
+  };
+  raf = requestAnimationFrame(step);
+  return () => cancelAnimationFrame(raf);
+}
+
+/* ---------- Fit the phone into whatever box it's embedded in ---------- */
+const device = document.getElementById('device');
+function fit() {
+  // Scaled to fit with 48px above and below, and placed by hand, since a scaled
+  // element still takes up its full size in the layout.
+  const s = Math.min(1, (innerWidth - 48) / W, (innerHeight - 96) / H);
+  Object.assign(device.style, {
+    position: 'absolute', transformOrigin: '0 0', transform: `scale(${s})`,
+    left: (innerWidth - W * s) / 2 + 'px', top: (innerHeight - H * s) / 2 + 'px',
+  });
+}
+addEventListener('resize', fit); fit();
+
+/* ---------- Puzzle model ---------- */
+const { rows, cols } = PUZZLE;
+const cellAt = {};
+PUZZLE.cells.forEach(c => cellAt[c.row + ',' + c.col] = c);
+const entryById = {};
+PUZZLE.entries.forEach(e => {
+  e.keys = [...e.answer].map((_, i) => e.direction === 'across' ? `${e.row},${e.col + i}` : `${e.row + i},${e.col}`);
+  entryById[e.id] = e;
+});
+const order = [...PUZZLE.entries].sort((a, b) => (a.direction === b.direction ? a.number - b.number : a.direction === 'across' ? -1 : 1));
+
+/* ---------- Home board ---------- */
+const homeBoard = document.getElementById('homeBoard');
+homeBoard.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+  const cell = cellAt[r + ',' + c], i = document.createElement('i');
+  if (!cell) i.className = 'b'; else if (cell.number) i.innerHTML = `<em>${cell.number}</em>`;
+  homeBoard.appendChild(i);
+}
+
+/* ---------- Cards give the instant a finger lands ---------- */
+document.querySelectorAll('[data-press]').forEach(card => {
+  let cancel, scale = 1;
+  const to = (target, spec) => {
+    cancel && cancel();
+    const from = scale;
+    cancel = animate({ ...spec, onUpdate: v => { scale = from + (target - from) * v; card.style.transform = `scale(${scale})`; } });
+  };
+  card.addEventListener('pointerdown', () => to(0.97, byBounce(0.16, 0.2)));
+  const up = () => to(1, byBounce(0.3, 0.35));
+  card.addEventListener('pointerup', up);
+  card.addEventListener('pointerleave', up);
+  card.addEventListener('pointercancel', up);
+});
+
+/* ---------- Pages slide side by side (UIKit spring, damping 0.9, 0.42s) ---------- */
+const home = document.getElementById('home'), solver = document.getElementById('solver');
+let busy = false;
+function slide(forward, done) {
+  busy = true;
+  animate({ response: 0.42, damping: 0.9, onUpdate: v => {
+    const p = forward ? v : 1 - v;
+    home.style.transform = `translateX(${-W * p}px)`;
+    solver.style.transform = `translateX(${W * (1 - p)}px)`;
+  }, onDone: () => { busy = false; done && done(); } });
+}
+
+document.getElementById('todayCard').addEventListener('click', () => { if (!busy) openSolver(); });
+document.getElementById('back').addEventListener('click', () => { if (!busy) { stopTimer(); slide(false); } });
+
+/* ---------- Solver layout: full-width board, 2pt ruled lines ---------- */
+const LINE = 2;
+const side = Math.min((W - (cols + 1) * LINE) / cols, 46 * 2);
+const gridEl = document.getElementById('grid');
+const gw = cols * side + (cols + 1) * LINE, gh = rows * side + (rows + 1) * LINE;
+gridEl.style.width = gw + 'px'; gridEl.style.height = gh + 'px';
+gridEl.style.left = (W - gw) / 2 + 'px';
+const clueBar = document.getElementById('clueBar');
+clueBar.style.top = (114 + gh + 10) + 'px';
+
+/* ---------- Sound: the app's own synths, sample for sample (SoundBank.swift) ---------- */
+const RATE = 44100;
+let actx = null;
+const bufCache = {};
+function audio() {
+  if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+  if (actx && actx.state === 'suspended') actx.resume();
+  return actx;
+}
+addEventListener('pointerdown', audio, { capture: true });
+addEventListener('keydown', audio, { capture: true });
+const sine = (f, t) => t < 0 ? 0 : Math.sin(2 * Math.PI * f * t);
+const env = (t, d) => t < 0 ? 0 : Math.exp(-t * d);
+const attack = (t, s) => t < 0 ? 0 : Math.min(1, t / s);
+const bell = (f, t, d) => t < 0 ? 0 : (Math.sin(2*Math.PI*f*t) + .28*Math.sin(2*Math.PI*f*2*t) + .08*Math.sin(2*Math.PI*f*3*t)) * attack(t, .004) * Math.exp(-t * d);
+function synth(seconds, fn) {
+  const ctx = audio(); if (!ctx) return null;
+  const n = Math.floor(seconds * RATE), buf = ctx.createBuffer(1, n, RATE), out = buf.getChannelData(0);
+  let seed = 0x9E3779B9 >>> 0, smoothed = 0;
+  for (let i = 0; i < n; i++) {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    const white = seed / 4294967295 * 2 - 1;
+    smoothed += (white - smoothed) * 0.35;
+    const t = i / RATE, tail = Math.min(1, (seconds - t) / 0.003);
+    out[i] = fn(t, smoothed) * tail;
+  }
+  return buf;
+}
+const SOUNDS = {
+  select: () => synth(0.05, t => sine(1250, t) * env(t, 140) * 0.14),
+  flip: () => synth(0.11, t => sine(1100, t) * env(t, 160) * .13 + sine(1480, t - .045) * env(t - .045, 160) * .11),
+  stamp: () => synth(0.09, (t, n) => Math.sin(2*Math.PI*165*t + 2.4*Math.exp(-t*55)) * env(t, 52) * .42 + n * env(t, 340) * .10 + sine(2600, t) * env(t, 900) * .10),
+  woodblock: () => synth(0.12, (t, n) => (sine(760, t) + .35 * sine(1520, t) + n * env(t, 300) * .4) * attack(t, .0008) * env(t, 45) * .5),
+  finish: () => synth(1.4, t => [523.25, 659.25, 783.99, 1046.5].reduce((s, f, i) => s + bell(f, t - i * .09, 3.2) * .12, 0)),
+};
+function play(name) {
+  const ctx = audio(); if (!ctx) return;
+  const buf = bufCache[name] || (bufCache[name] = SOUNDS[name]()); if (!buf) return;
+  const src = ctx.createBufferSource(), gain = ctx.createGain();
+  gain.gain.value = 0.8; src.buffer = buf; src.connect(gain).connect(ctx.destination); src.start();
+}
+/* A solved word's note: a soft mallet with its octaves (SoundBank.melody). */
+function playNote(f) {
+  const ctx = audio(); if (!ctx) return;
+  const key = 'note' + f;
+  const buf = bufCache[key] || (bufCache[key] = synth(1.1, t => {
+    const body = Math.sin(2*Math.PI*f*t) + .3*Math.sin(2*Math.PI*f*2*t)*Math.exp(-t*9) + .35*Math.sin(2*Math.PI*f*4*t)*Math.exp(-t*70);
+    return body * attack(t, .003) * Math.exp(-t * 3.2) * .12;
+  }));
+  const src = ctx.createBufferSource(), gain = ctx.createGain();
+  gain.gain.value = 0.8; src.buffer = buf; src.connect(gain).connect(ctx.destination); src.start();
+}
+function noteFor(e) {
+  const scale = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5, 1174.66, 1318.51, 1567.98, 1760.0];
+  const i = PUZZLE.entries.findIndex(x => x.id === e.id);
+  return scale[(i * 3 + e.answer.length) % scale.length];
+}
+
+/* ---------- Haptics: as much as a browser allows. Android vibrates; iPhone Safari
+   gives one light tick through a hidden switch, so every moment is that tick. ---------- */
+const hapticSwitch = (() => {
+  const label = document.createElement('label'), input = document.createElement('input');
+  input.type = 'checkbox'; input.setAttribute('switch', '');
+  label.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;pointer-events:none';
+  label.appendChild(input); document.body.appendChild(label);
+  return label;
+})();
+const PATTERNS = { select: [6], flip: [6, 40, 6], stamp: [10], delete: [8], solved: [12, 50, 12, 50, 18], finish: [18, 60, 18, 60, 30] };
+function haptic(kind) {
+  if (navigator.vibrate && (!navigator.userActivation || navigator.userActivation.hasBeenActive)) { try { navigator.vibrate(PATTERNS[kind] || [8]); return; } catch (e) {} }
+  try { hapticSwitch.click(); } catch (e) {}
+}
+function moment(kind) {
+  haptic(kind);
+  if (kind === 'select' || kind === 'flip' || kind === 'stamp' || kind === 'finish') play(kind);
+  if (kind === 'delete') play('woodblock');
+}
+
+/* ---------- Squares ---------- */
+const tiles = {}, inners = {}, glyphs = {};
+const anchorOf = c => cols > 1 ? c / (cols - 1) : .5;
+PUZZLE.cells.forEach(c => {
+  const k = c.row + ',' + c.col;
+  const outer = document.createElement('div');   // dealt in at the start
+  outer.className = 'tile';
+  outer.style.width = outer.style.height = side + 'px';
+  outer.style.left = (LINE + c.col * (side + LINE)) + 'px';
+  outer.style.top = (LINE + c.row * (side + LINE)) + 'px';
+  const inner = document.createElement('div');   // hops and ripples
+  inner.className = 'sq';
+  inner.innerHTML = c.number ? `<em style="font-size:${side * .22}px;left:${side * .1}px;top:${side * .06}px">${c.number}</em>` : '';
+  const glyph = document.createElement('div');   // the letter's tile
+  glyph.className = 'glyph';
+  glyph.innerHTML = `<i></i><b></b>`;
+  inner.appendChild(glyph); outer.appendChild(inner);
+  outer.addEventListener('pointerdown', e => { e.preventDefault(); tapCell(k); });
+  gridEl.appendChild(outer);
+  tiles[k] = outer; inners[k] = inner; glyphs[k] = glyph;
+});
+
+/* ---------- Solve state ---------- */
+let letters = {}, cursor = null, dir = 'across', highlighted = false, finished = false;
+let solvedEntries = new Set(), shownCursor = null, cursorWaitsFor = null;
+const flights = {};          // key → running flight
+let lastStamped = null, layer = 0;
+
+function currentEntry() {
+  const c = cellAt[cursor];
+  return entryById[c[dir]] || entryById[c[dir === 'across' ? 'down' : 'across']];
+}
+function faceOf(k, inEntry) {
+  const solvedKey = finished || [...solvedEntries].some(id => entryById[id].keys.includes(k));
+  if (highlighted && !finished && k === shownCursor) return 'var(--gold)';
+  if (solvedKey) return inEntry.has(k) ? 'var(--solved-entry)' : 'var(--solved)';
+  if (inEntry.has(k)) return 'var(--entry)';
+  return '#fff';
+}
+function paint() {
+  const e = currentEntry(), inEntry = new Set(highlighted && !finished ? e.keys : []);
+  for (const k in tiles) {
+    inners[k].style.background = faceOf(k, inEntry);
+    const ch = letters[k] || '';
+    const b = glyphs[k].querySelector('b');
+    if (!flights[k]) { b.textContent = ch; glyphs[k].style.display = ch ? 'block' : 'none'; }
+  }
+  document.getElementById('clue').textContent = finished ? 'Solved' : e.clue;
+}
+function select(k, d, quiet) {
+  const before = cursor + dir;
+  cursor = k;
+  if (d) dir = d;
+  if (!cellAt[k][dir]) dir = dir === 'across' ? 'down' : 'across';
+  if (!cursorWaitsFor) shownCursor = cursor;
+  if (!quiet && before !== cursor + dir) moment('select');
+  paint();
+}
+function tapCell(k) {
+  if (finished || !highlighted) return;
+  if (k === cursor && cellAt[k].across && cellAt[k].down) {
+    dir = dir === 'across' ? 'down' : 'across'; moment('flip'); paint(); return;
+  }
+  cursorWaitsFor = null;
+  select(k);
+}
+function jump(step) {
+  const e = currentEntry();
+  const i = order.indexOf(e);
+  const n = order[(i + step + order.length) % order.length];
+  const empty = n.keys.find(k => !letters[k]) || n.keys[0];
+  cursorWaitsFor = null;
+  select(empty, n.direction);
+}
+document.getElementById('prev').addEventListener('click', () => !finished && jump(-1));
+document.getElementById('next').addEventListener('click', () => !finished && jump(1));
+
+/* ---------- A letter's flight (GlyphView.TileFlight) ----------
+   It appears at 1.2× its square, grows to 1.5× (0.2s, expo out), holds 0.06s,
+   then drops into its square under gravity (0.42s, distance ∝ t²). The stamp
+   plays as it meets the board. A newer letter snaps it down in 0.08s. */
+const expoOut = x => x >= 1 ? 1 : (1 - Math.pow(2, -10 * x)) / (1 - Math.pow(2, -10));
+const CURVES = { expoOut, linear: x => x, gravity: x => x * x, easeIn: x => x * x * x };
+const BIG = 1.5, REST = { scale: 1, opacity: 1, height: 0 };
+const mix = (a, b, t) => ({
+  scale: Math.exp(Math.log(a.scale) + (Math.log(b.scale) - Math.log(a.scale)) * t),
+  opacity: a.opacity + (b.opacity - a.opacity) * t,
+  height: a.height + (b.height - a.height) * t,
+});
+function poseAt(f, now) {
+  let t = (now - f.start) / 1000;
+  for (const s of f.segments) {
+    if (t < s.length) return mix(s.from, s.to, CURVES[s.curve](Math.max(0, t / s.length)));
+    t -= s.length;
+  }
+  return f.segments[f.segments.length - 1].to;
+}
+function drawGlyph(k, pose, face) {
+  const g = glyphs[k], [, c] = k.split(',').map(Number);
+  const size = side * pose.scale, flying = pose.height > 0.01, h = pose.height;
+  g.style.display = 'block';
+  g.style.width = g.style.height = size + 'px';
+  g.style.left = ((side - size) / 2 + (size - side) * (0.5 - anchorOf(c))) + 'px';
+  g.style.top = ((side - size) / 2) + 'px';
+  g.style.opacity = pose.opacity;
+  g.style.background = flying ? '#fff' : 'transparent';
+  g.style.boxShadow = flying ? `0 ${size * .06 + 14 * h}px ${28 * h}px rgba(0,0,0,${.22 - .06 * h})` : 'none';
+  g.style.zIndex = flying ? 3 : 1;
+  const b = g.querySelector('b');
+  b.style.fontSize = (size * .56) + 'px';
+  b.style.color = flying ? '#000' : 'var(--ink)';
+  // The square's number rides on the tile's face once it's down.
+  g.querySelector('i').textContent = '';
+}
+function fly(k) {
+  if (lastStamped && lastStamped !== k && flights[lastStamped]) snapDown(lastStamped);
+  lastStamped = k;
+  tiles[k].style.zIndex = ++layer;
+  glyphs[k].querySelector('b').textContent = letters[k];
+  const appear = { scale: BIG * 0.8, opacity: 0, height: 1 }, full = { scale: BIG, opacity: 1, height: 1 };
+  run(k, [
+    { from: appear, to: full, length: 0.2, curve: 'expoOut' },
+    { from: full, to: full, length: 0.06, curve: 'linear' },
+    { from: full, to: REST, length: 0.42, curve: 'gravity' },
+  ]);
+}
+function snapDown(k) {
+  const f = flights[k]; if (!f) return;
+  run(k, [{ from: poseAt(f, performance.now()), to: REST, length: 0.08, curve: 'easeIn' }], f.touched);
+}
+function run(k, segments, alreadyTouched = false) {
+  const prev = flights[k]; if (prev) cancelAnimationFrame(prev.raf);
+  const f = { segments, start: performance.now(), touched: alreadyTouched, raf: 0 };
+  const total = segments.reduce((s, x) => s + x.length, 0);
+  flights[k] = f;
+  const step = now => {
+    if (flights[k] !== f) return;
+    const t = (now - f.start) / 1000;
+    drawGlyph(k, poseAt(f, now));
+    if (t >= total) {
+      if (!f.touched) { f.touched = true; landed(k); }
+      delete flights[k];
+      drawGlyph(k, REST); paint();
+      return;
+    }
+    f.raf = requestAnimationFrame(step);
+  };
+  f.raf = requestAnimationFrame(step);
+}
+
+/* A tile has touched down: its stamp plays now, and anything waiting on it runs. */
+let pendingSolve = null;
+function landed(k) {
+  moment('stamp');
+  if (cursorWaitsFor === k) { cursorWaitsFor = null; shownCursor = cursor; paint(); }
+  if (pendingSolve && pendingSolve.after === k) { const p = pendingSolve; pendingSolve = null; clearTimeout(p.timer); p.run(); }
+}
+
+/* A word comes right: its tiles hop in reading order, 0.05s apart (HopEffect). */
+function hop(keys, stagger = 0.05, lift = 6, grow = 0.1) {
+  keys.forEach((k, i) => {
+    const t = inners[k];
+    const go = (from, to, spec, then) => animate({ ...spec, onUpdate: v => {
+      const x = from + (to - from) * v;
+      t.style.transform = `translateY(${-lift * x}px) scale(${1 + grow * x})`;
+    }, onDone: then });
+    setTimeout(() => go(0, 1, { response: 0.14, damping: 0.85 }, () => go(1, 0, byBounce(0.4, 0.4))), i * stagger * 1000);
+  });
+}
+
+function type(ch) {
+  if (finished || !highlighted) return;
+  const at = cursor, e = currentEntry();
+  letters[at] = ch;
+  const wasSolved = new Set(solvedEntries);
+  for (const id of [cellAt[at].across, cellAt[at].down].filter(Boolean)) {
+    const en = entryById[id];
+    if (en.keys.every(k => letters[k] === cellAt[k].solution)) solvedEntries.add(id);
+  }
+  const newly = [...solvedEntries].filter(id => !wasSolved.has(id));
+  const complete = PUZZLE.cells.every(c => letters[c.row + ',' + c.col] === c.solution);
+  // The cursor waits on the typed square until its tile lands.
+  cursorWaitsFor = at;
+  fly(at);
+  if (!complete) {
+    const i = e.keys.indexOf(at);
+    const nextEmpty = e.keys.slice(i + 1).find(k => !letters[k]);
+    if (nextEmpty) select(nextEmpty, null, true);
+    else if (i < e.keys.length - 1) select(e.keys[i + 1], null, true);
+    else {
+      for (let s = 1; s <= order.length; s++) {
+        const n = order[(order.indexOf(e) + s) % order.length];
+        const gap = n.keys.find(k => !letters[k]);
+        if (gap) { select(gap, n.direction, true); break; }
+      }
+    }
+  }
+  // Green, and everything with it, waits for the tile to land (or 0.9s at most).
+  if (newly.length || complete) {
+    const celebrate = () => {
+      if (complete) return finish(at);
+      newly.forEach(id => hop(entryById[id].keys));
+      setTimeout(() => { haptic('solved'); playNote(noteFor(entryById[newly[0]])); }, 80);
+      paint();
+    };
+    // Hold the green back until it lands.
+    newly.forEach(id => solvedEntries.delete(id));
+    const run = () => { newly.forEach(id => solvedEntries.add(id)); celebrate(); };
+    pendingSolve = { after: at, run, timer: setTimeout(() => { if (pendingSolve && pendingSolve.run === run) { pendingSolve = null; run(); } }, 900) };
+  }
+  paint();
+}
+
+/* Backspace: the letter shrinks a touch and fades, in place (0.18s), with the woodblock. */
+function erase() {
+  if (finished || !highlighted) return;
+  const e = currentEntry(), i = e.keys.indexOf(cursor);
+  let k = cursor;
+  if (!letters[k] && i > 0) { k = e.keys[i - 1]; cursor = k; }
+  cursorWaitsFor = null; shownCursor = cursor;
+  if (letters[k]) {
+    const gone = letters[k]; delete letters[k];
+    if (flights[k]) { cancelAnimationFrame(flights[k].raf); delete flights[k]; }
+    const ghost = document.createElement('div');
+    ghost.className = 'ghost';
+    ghost.innerHTML = `<b style="font-size:${side * .56}px">${gone}</b>`;
+    inners[k].appendChild(ghost);
+    const t0 = performance.now();
+    const step = now => {
+      const p = Math.min(1, (now - t0) / 180);
+      ghost.style.transform = `scale(${1 - .12 * p})`; ghost.style.opacity = 1 - p * p * p;
+      if (p < 1) requestAnimationFrame(step); else ghost.remove();
+    };
+    requestAnimationFrame(step);
+  }
+  solvedEntries.forEach(id => { if (entryById[id].keys.some(x => letters[x] !== cellAt[x].solution)) solvedEntries.delete(id); });
+  moment('delete');
+  paint();
+}
+
+/* The finish: a ripple runs out from the last letter, 0.045s per square of distance. */
+function finish(from) {
+  finished = true; stopTimer(); paint();
+  setTimeout(() => moment('finish'), 80);
+  const [fr, fc] = from.split(',').map(Number);
+  for (const k in inners) {
+    const [r, c] = k.split(',').map(Number);
+    const d = Math.hypot(r - fr, c - fc), t = inners[k];
+    setTimeout(() => {
+      animate({ response: 0.14, damping: 0.85, onUpdate: v => t.style.transform = `translateY(${-5 * v}px) scale(${1 + 0.12 * v})`,
+        onDone: () => animate({ ...byBounce(0.5, 0.42), onUpdate: v => t.style.transform = `translateY(${-5 * (1 - v)}px) scale(${1 + 0.12 * (1 - v)})` }) });
+    }, d * 45);
+  }
+}
+
+/* ---------- Keyboard ---------- */
+const kb = document.getElementById('kb');
+const rowsKB = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
+kb.innerHTML = rowsKB.map((r, i) => `<div class="row">${i === 2 ? '<div class="key wide" data-k="shift"><svg width="20" height="18" viewBox="0 0 20 18"><path d="M10 1 1.5 10H6v7h8v-7h4.5Z" fill="none" stroke="#000000" stroke-width="1.6" stroke-linejoin="round"/></svg></div>' : ''}${[...r].map(ch => `<div class="key" data-k="${ch}">${ch}</div>`).join('')}${i === 2 ? '<div class="key wide" data-k="del"><svg width="24" height="18" viewBox="0 0 24 18"><path d="M8 1h13a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H8L1 9Z" fill="none" stroke="#000000" stroke-width="1.6" stroke-linejoin="round"/><path d="m11 6 6 6m0-6-6 6" stroke="#000000" stroke-width="1.6" stroke-linecap="round"/></svg></div>' : ''}</div>`).join('')
+  + `<div class="row"><div class="key fn">123</div><div class="key space" data-k="space"></div><div class="key fn" data-k="next"><svg width="12" height="20" viewBox="0 0 12 20"><path d="m2 2 8 8-8 8" stroke="#000000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>`
+  + `<div class="icons"><svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#000000" stroke-width="1.6"><circle cx="14" cy="14" r="11"/><path d="M3 14h22M14 3c-4 4-4 18 0 22M14 3c4 4 4 18 0 22M5.5 8h17M5.5 20h17"/></svg><svg width="20" height="28" viewBox="0 0 20 28" fill="none" stroke="#000000" stroke-width="1.6" stroke-linecap="round"><rect x="6" y="2" width="8" height="15" rx="4"/><path d="M2 13a8 8 0 0 0 16 0M10 21v5M6 26h8"/></svg></div>`;
+kb.addEventListener('pointerdown', e => {
+  const key = e.target.closest('[data-k]'); if (!key) return;
+  e.preventDefault();
+  key.classList.add('down'); setTimeout(() => key.classList.remove('down'), 90);
+  const k = key.dataset.k;
+  if (k === 'del') erase(); else if (k === 'next') jump(1); else if (k.length === 1) type(k.toUpperCase());
+});
+addEventListener('keydown', e => {
+  if (solver.style.transform !== 'translateX(0px)') return;
+  if (/^[a-z]$/i.test(e.key)) { type(e.key.toUpperCase()); e.preventDefault(); }
+  else if (e.key === 'Backspace') { erase(); e.preventDefault(); }
+  else if (e.key === 'Tab' || e.key === 'Enter') { jump(e.shiftKey ? -1 : 1); e.preventDefault(); }
+  else if (e.key.startsWith('Arrow')) {
+    const [r, c] = cursor.split(',').map(Number);
+    const d = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] }[e.key];
+    let nr = r + d[0], nc = c + d[1];
+    while (nr >= 0 && nr < rows && nc >= 0 && nc < cols && !cellAt[nr + ',' + nc]) { nr += d[0]; nc += d[1]; }
+    if (cellAt[nr + ',' + nc]) select(nr + ',' + nc, d[0] ? 'down' : 'across');
+    e.preventDefault();
+  }
+});
+
+/* ---------- Timer ---------- */
+let timerStart = 0, timerRAF;
+function tick() {
+  const s = Math.floor((performance.now() - timerStart) / 1000);
+  document.getElementById('timer').textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  timerRAF = requestAnimationFrame(tick);
+}
+function stopTimer() { cancelAnimationFrame(timerRAF); }
+
+/* ---------- Opening the puzzle ---------- */
+function openSolver() {
+  letters = {}; solvedEntries = new Set(); finished = false; highlighted = false;
+  cursorWaitsFor = null; pendingSolve = null; lastStamped = null;
+  for (const k in flights) { cancelAnimationFrame(flights[k].raf); delete flights[k]; }
+  for (const k in inners) inners[k].style.transform = '';
+  const first = order[0];
+  cursor = shownCursor = first.keys[0]; dir = first.direction;
+  paint();
+  // Tiles dealt up from below: each starts 1.4 squares down, at 70%, turned a few
+  // degrees its own way, and springs in on a diagonal wave from the top-left.
+  for (const k in tiles) {
+    const [r, c] = k.split(',').map(Number);
+    const spin = ((r * 7 + c * 13) % 11) - 5, rise = side * 1.4, t = tiles[k];
+    t.style.opacity = 0; t.style.transform = `translateY(${rise}px) scale(.7) rotate(${spin}deg)`;
+    animate({ response: 0.34, damping: 0.72, delay: (r + c) * 0.0065, onUpdate: v => {
+      t.style.opacity = Math.max(0, Math.min(1, v));
+      t.style.transform = `translateY(${rise * (1 - v)}px) scale(${0.7 + 0.3 * v}) rotate(${spin * (1 - v)}deg)`;
+    } });
+  }
+  // A run of soft ticks while the tiles are dealt.
+  for (let i = 0; i < 4; i++) setTimeout(() => moment('select'), 80 + i * 60);
+  // The selection fades in once the board has landed.
+  setTimeout(() => { highlighted = true; paint(); }, 420);
+  timerStart = performance.now(); stopTimer(); tick();
+  slide(true);
+}
+
+document.getElementById('replay').addEventListener('click', () => {
+  if (busy) return;
+  stopTimer();
+  home.style.transform = 'translateX(0px)'; solver.style.transform = `translateX(${W}px)`;
+});
+</script>
+</body>
+</html>

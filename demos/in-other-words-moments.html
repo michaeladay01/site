@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>In Other Words — small moments</title>
+<style>
+  :root { --ink:#000; --gold:#E8B93C; --parcel:#E5E3DA; --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,"Helvetica Neue",Helvetica,Arial,sans-serif; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; background:transparent; overflow:hidden; font-family:var(--font); -webkit-font-smoothing:antialiased; color:var(--ink); }
+  /* The grid is a square, centred in whatever shape the frame happens to be.
+     That is what keeps each tile square, and the scale below uniform — 1fr
+     rows in a non-square frame stretched every icon sideways. */
+  #grid { position:absolute; inset:0; margin:auto; width:min(100vw,100vh); height:min(100vw,100vh);
+          padding:6%; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:3%; }
+  /* Tab bar, gift / confetti, average. */
+  .tile:nth-child(1){order:1} .tile:nth-child(4){order:2} .tile:nth-child(3){order:3} .tile:nth-child(2){order:4}
+  .tile { position:relative; overflow:hidden; border-radius:14px; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06); }
+  /* Every tile is laid out at 268 points and scaled to its real size. */
+  .stage { position:absolute; left:0; top:0; width:268px; height:268px; transform-origin:0 0; overflow:hidden; }
+
+  /* Tab bar */
+  .pages { position:absolute; inset:0; }
+  .pg { position:absolute; inset:0; padding:16px; display:flex; flex-direction:column; gap:8px; will-change:transform; background:#fff; }
+  .pg i { display:block; border-radius:4px; flex:1; }
+  .bar { position:absolute; left:26px; bottom:26px; width:216px; height:60px; border-radius:30px; background:rgba(255,255,255,.62); -webkit-backdrop-filter:blur(14px) saturate(180%); backdrop-filter:blur(14px) saturate(180%); box-shadow:0 8px 28px rgba(0,0,0,.14),inset 0 0 0 .5px rgba(255,255,255,.95),inset 0 1px 1px rgba(255,255,255,.9); }
+  .lens { position:absolute; top:6px; left:6px; width:64px; height:48px; border-radius:24px; background:rgba(0,0,0,.07); will-change:transform; }
+  .slot { position:absolute; top:6px; width:64px; height:48px; display:grid; place-items:center; }
+  .slot canvas,.slot svg { display:block; overflow:visible; }
+  .dot { position:absolute; right:16px; top:9px; width:8px; height:8px; border-radius:50%; background:var(--gold); }
+
+  /* Numbers */
+  .avg { position:absolute; inset:0; background:var(--gold); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
+  .avg .k { font:600 19px var(--font); opacity:.6; }
+  .avg .big { display:flex; justify-content:center; font:700 78px/1.1 var(--font); letter-spacing:-2.5px; font-variant-numeric:tabular-nums; }
+  .avg .big span { display:inline-block; transform-origin:50% 100%; will-change:transform,opacity; }
+
+  /* Confetti */
+  #confetti { position:absolute; inset:0; width:100%; height:100%; background:#fff; }
+
+  /* The gift folding down */
+  .giftcard { position:absolute; border-radius:5px; will-change:left,top,width,height; }
+  #gridCanvas { position:absolute; display:block; }
+  .t { position:absolute; white-space:nowrap; }
+  #hero1,#hero2 { font:700 17px/1.15 var(--font); letter-spacing:-.4px; }
+  #hero2 { opacity:.4; }
+  #play { position:absolute; width:32px; height:32px; border-radius:50%; background:#000; display:grid; place-items:center; }
+  #rowText b { display:block; font:700 15px/1.2 var(--font); letter-spacing:-.3px; }
+  #rowText span { display:block; font:500 11.5px/1.3 var(--font); opacity:.5; }
+  #chev { position:absolute; opacity:.35; }
+</style>
+</head>
+<body>
+<div id="grid">
+  <div class="tile"><div class="stage">
+    <div class="pages" id="pages">
+      <div class="pg" data-p="0"><i style="background:var(--parcel);flex:.32"></i><i style="background:var(--gold)"></i></div>
+      <div class="pg" data-p="1"><i style="background:var(--gold)"></i><i style="background:var(--parcel);flex:.34"></i></div>
+      <div class="pg" data-p="2"><i style="background:var(--gold);flex:.4"></i><i style="background:var(--gold);flex:.4"></i><i style="background:var(--parcel);flex:.5"></i></div>
+    </div>
+    <div class="bar"><div class="lens" id="lens"></div>
+      <div class="slot" style="left:6px"><canvas id="ic0" width="104" height="104" style="width:26px;height:26px"></canvas></div>
+      <div class="slot" style="left:76px"><svg id="ic1" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><g id="giftBox"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v8a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 20v-8Z"/></g><path id="giftRibbon" d="M12 8v13.5"/><path d="M12 8c-2-5-7-5-7-2s4 2 7 2Zm0 0c2-5 7-5 7-2s-4 2-7 2Z"/></svg><i class="dot"></i></div>
+      <div class="slot" style="left:146px"><canvas id="ic2" width="136" height="136" style="width:34px;height:34px"></canvas></div>
+    </div>
+  </div></div>
+  <div class="tile"><div class="stage"><div class="avg"><div class="k">Average</div><div class="big" id="big"></div></div></div></div>
+  <div class="tile"><div class="stage"><canvas id="confetti" width="536" height="536"></canvas></div></div>
+  <div class="tile"><div class="stage" id="giftStage">
+    <div class="giftcard" id="card"></div>
+    <canvas id="gridCanvas"></canvas>
+    <div class="t" id="hero1">From Ollie</div><div class="t" id="hero2">Solved</div>
+    <div id="play"><svg width="15" height="12" viewBox="0 0 15 12"><path d="m1.5 6.5 4 4 8-9" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class="t" id="rowText"><b>From Ollie</b><span>November 5</span><span>Solved</span></div>
+    <svg id="chev" width="8" height="13" viewBox="0 0 12 20"><path d="m2 2 8 8-8 8" stroke="#000" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div></div>
+</div>
+<script>
+/* The app's own spring, and small helpers. */
+function springAt(t,r,z){ if(t<=0)return 0; const w=2*Math.PI/r; if(z>=1)return 1-Math.exp(-w*t)*(1+w*t); const d=w*Math.sqrt(1-z*z); return 1-Math.exp(-z*w*t)*(Math.cos(d*t)+(z*w/d)*Math.sin(d*t)); }
+function animate({response,damping,delay=0,onUpdate,onDone}){ const s=performance.now()+delay*1000; const f=n=>{const t=(n-s)/1000,v=springAt(t,response,damping);onUpdate(t<0?0:v); if(t>.05&&((t>response*.6&&Math.abs(1-v)<.0008)||t>3)){onUpdate(1);onDone&&onDone();return;} requestAnimationFrame(f);}; requestAnimationFrame(f); }
+function tween(seconds,onUpdate,onDone){ const s=performance.now(); const f=n=>{const p=Math.min(1,(n-s)/seconds/1000);onUpdate(p); if(p<1)requestAnimationFrame(f); else onDone&&onDone();}; requestAnimationFrame(f); }
+const later=(s,fn)=>setTimeout(fn,s*1000);
+const settle=x=>{x=Math.min(1,Math.max(0,x));return 1-Math.exp(-6*x)*Math.cos(8*x)*(1-x);};
+const lerp=(a,b,t)=>a+(b-a)*t;
+/* Scale each 268pt tile to its real size. */
+function fit(){ document.querySelectorAll('.tile').forEach(t=>{ const st=t.querySelector('.stage');
+  /* One scale factor for both axes, or the icons come out stretched. The
+     larger ratio fills the tile; anything over the edge is cropped by it. */
+  const s=Math.max(t.clientWidth,t.clientHeight)/268;
+  const dx=(t.clientWidth-268*s)/2, dy=(t.clientHeight-268*s)/2;
+  st.style.transform=`translate(${dx}px,${dy}px) scale(${s})`; }); }
+addEventListener('resize',fit); fit();
+
+/* ---------- 1. The tab bar: the glass lens gliding, each icon acting itself out ---------- */
+const lens=document.getElementById('lens'), pages=[...document.querySelectorAll('.pg')];
+const tints=on=>on?1:.5;
+const layouts=[[2,3,7],[1,3,8]]; let crossTaps=0;
+function drawCross(p){ const c=document.getElementById('ic0'),g=c.getContext('2d'); g.setTransform(4,0,0,4,0,0); g.clearRect(0,0,26,26); g.save();
+  const s=26,t=2.2,r=5,cell=s/3; const fr=new Path2D(); fr.roundRect(t/2,t/2,s-t,s-t,r); g.clip(fr); g.fillStyle=g.strokeStyle='#000';
+  const to=layouts[crossTaps%2],from=layouts[(crossTaps+1)%2];
+  for(let k=0;k<3;k++){const e=settle(p*1.5-k*.25); const x=lerp(from[k]%3,to[k]%3,e),y=lerp(Math.floor(from[k]/3),Math.floor(to[k]/3),e); g.fillRect(x*cell,y*cell,cell,cell);}
+  g.lineWidth=1.8; g.beginPath(); for(const k of[1,2]){g.moveTo(k*cell,0);g.lineTo(k*cell,s);g.moveTo(0,k*cell);g.lineTo(s,k*cell);} g.stroke();
+  g.lineWidth=t*1.3; g.stroke(fr); g.restore(); }
+const penPt=t=>[6.5+9*t,15.5-1.9*Math.sin(t*Math.PI*4)];
+const ease=t=>t*t*(3-2*t);
+const mixP=(a,b,t)=>[lerp(a[0],b[0],ease(t)),lerp(a[1],b[1],ease(t))];
+function drawPen(p,on){ const c=document.getElementById('ic2'),g=c.getContext('2d'); g.setTransform(4,0,0,4,0,0); g.clearRect(0,0,34,34); g.translate(5,5); g.fillStyle=g.strokeStyle='#000'; g.lineCap=g.lineJoin='round';
+  g.lineWidth=on?2.2:1.8; g.beginPath(); g.moveTo(11.5,4); g.lineTo(6.5,4); g.quadraticCurveTo(4,4,4,6.5); g.lineTo(4,19); g.quadraticCurveTo(4,21.5,6.5,21.5); g.lineTo(17.5,21.5); g.quadraticCurveTo(20,21.5,20,19); g.lineTo(20,13.5); g.stroke();
+  const drop=.14,write=.72,rest=[11,13],drawn=Math.min(1,Math.max(0,(p-drop)/(write-drop)));
+  const tip=p<drop?mixP(rest,penPt(0),p/drop):p<write?penPt(drawn):mixP(penPt(1),rest,(p-write)/(1-write));
+  if(p>drop&&p<1){ g.save(); g.globalAlpha=p<write?1:(1-p)/(1-write); g.lineWidth=1.7; g.beginPath(); g.moveTo(...penPt(0)); for(let i=1;i<=40&&i/40<=drawn;i++)g.lineTo(...penPt(i/40)); g.lineTo(...penPt(drawn)); g.stroke(); g.restore(); }
+  const h=2,u=[.707,-.707],n=[.707,.707],at=(a,b)=>[tip[0]+u[0]*a+n[0]*b,tip[1]+u[1]*a+n[1]*b];
+  g.beginPath(); g.moveTo(...tip); g.lineTo(...at(3,-h)); g.lineTo(...at(15.5,-h)); g.lineTo(...at(15.5,h)); g.lineTo(...at(3,h)); g.closePath(); g.fill(); }
+function drawGift(p,on){ const s=document.getElementById('ic1'); s.setAttribute('stroke','#000'); s.setAttribute('stroke-width',on?2.2:1.7);
+  document.getElementById('giftBox').setAttribute('fill',on?'#000':'none'); document.getElementById('giftRibbon').setAttribute('stroke',on?'#fff':'#000'); s.style.transformOrigin='50% 100%'; s.style.transform=`translateY(${-3*Math.sin(p*Math.PI)}px) rotate(${Math.sin(p*Math.PI*4)*(1-p)*13}deg)`; }
+let tab=0;
+function paintTabs(){ document.getElementById('ic0').style.opacity=tints(tab===0); document.getElementById('ic1').style.opacity=tints(tab===1); document.getElementById('ic2').style.opacity=tints(tab===2); }
+drawCross(1); drawGift(1,false); drawPen(1,false); paintTabs();
+pages.forEach((el,i)=>el.style.transform=`translateX(${i*268}px)`);
+const route=[1,2,1,0];let ri=0, lensX=0;
+function nextTab(){
+  const to=route[ri++%route.length], from=tab, fx=lensX, tx=to*70; tab=to; paintTabs();
+  // The jelly: the lens's leading edge springs off first and overshoots a touch, the
+  // trailing edge catches up, so it stretches as it travels and settles back to shape.
+  const dir=Math.sign(tx-fx), started=performance.now();
+  animate({response:.42,damping:.86,onUpdate:v=>{ pages.forEach((el,i)=>el.style.transform=`translateX(${(i-lerp(from,to,v))*268}px)`); }});
+  const jelly=n=>{ const t=(n-started)/1000;
+    const lead=springAt(t,.3,.68), trail=springAt(t,.52,.82);
+    const a=lerp(fx,tx,dir>0?trail:lead), b=lerp(fx,tx,dir>0?lead:trail)+64;
+    const stretch=Math.max(0,b-a-64), swell=Math.min(1,stretch/28);
+    lens.style.left=(6+a)+'px'; lens.style.width=(b-a)+'px';
+    lens.style.top=(6-3*swell)+'px'; lens.style.height=(48+6*swell)+'px'; lens.style.borderRadius=((48+6*swell)/2)+'px';
+    lens.style.background=`rgba(0,0,0,${.07-.015*swell})`;
+    if(t<1.1) requestAnimationFrame(jelly); else { lensX=tx; lens.style.left=(6+tx)+'px'; lens.style.width='64px'; lens.style.top='6px'; lens.style.height='48px'; } };
+  requestAnimationFrame(jelly);
+  drawGift(1,to===1); drawPen(1,to===2);
+  // No finger here, so each icon waits for the lens's front edge to reach it.
+  later(.15,()=>{
+    if(to===0){crossTaps++; tween(.55,drawCross);}
+    if(to===1) tween(.6,p=>drawGift(p,true));
+    if(to===2) tween(1.1,p=>drawPen(p,true));
+  });
+  later(2,nextTab);
+}
+later(.8,nextTab);
+
+/* ---------- 2. The average's digits, popping up one after another ---------- */
+const big=document.getElementById('big'), times=['4:36','3:52','5:18','4:07','2:49','3:21'];let ti=0;
+function nextTime(){ const txt=times[ti++%times.length]; big.innerHTML=[...txt].map(c=>`<span>${c}</span>`).join('');
+  [...big.children].forEach((el,k)=>{ el.style.opacity=0; el.style.transform='translateY(10px) scale(.55)';
+    animate({response:.42,damping:.58,delay:k*.04,onUpdate:v=>{el.style.opacity=Math.min(1,Math.max(0,v));el.style.transform=`translateY(${10*(1-v)}px) scale(${.55+.45*v})`;}}); });
+  later(2,nextTime); }
+nextTime();
+
+/* ---------- 3. Confetti: the app's own burst and gravity ---------- */
+const cc=document.getElementById('confetti'),cg=cc.getContext('2d'),cols=['#E8B93C','#E8B93C','#F4DFA6','#000000','#000751','#E5E3DA'];
+const rnd=(a,b)=>a+Math.random()*(b-a);
+let bits=[],t0=0;
+function burst(){ t0=performance.now(); bits=Array.from({length:70},()=>({x:rnd(.1,.9),vx:rnd(-.35,.35),vy:rnd(1.1,1.75),spin:rnd(-6,6),size:rnd(7,13),c:cols[Math.floor(Math.random()*cols.length)],d:rnd(0,.25)})); }
+function drawConfetti(n){ const t=(n-t0)/1000,S=268; cg.setTransform(2,0,0,2,0,0); cg.clearRect(0,0,S,S);
+  for(const b of bits){const tt=t-b.d; if(tt<=0)continue; cg.save(); cg.translate((b.x+b.vx*tt)*S,S*(1.05-b.vy*tt+.95*tt*tt)); cg.rotate(b.spin*tt); cg.globalAlpha=Math.max(0,Math.min(1,3.2-tt)); cg.fillStyle=b.c; cg.fillRect(-b.size/2,-b.size/2,b.size,b.size); cg.restore();}
+  if(t>2.8)burst(); requestAnimationFrame(drawConfetti); }
+burst(); requestAnimationFrame(drawConfetti);
+
+/* ---------- 4. The gift's big card folding down into its row ---------- */
+const ROWS=['......#','##.##.#','#...#.#','.#.#.##','......#','.###.#.','.##....','...#.#.'];
+const big4={x:44,y:16,w:180,h:236,gx:57,gy:29,gw:154,gh:166},row={x:16,y:102,w:236,h:64,gx:28,gy:112,gw:38,gh:44};
+const $=i=>document.getElementById(i),card=$('card'),gc=$('gridCanvas');
+function drawGrid(w,h,gap){ const R=2; gc.width=w*R; gc.height=h*R; gc.style.width=w+'px'; gc.style.height=h+'px'; const g=gc.getContext('2d'); g.scale(R,R); g.fillStyle='#000'; g.fillRect(0,0,w,h); g.fillStyle='#fff';
+  const cw=(w-gap*8)/7,ch=(h-gap*9)/8; ROWS.forEach((l,r)=>[...l].forEach((x,c)=>{if(x!=='#')g.fillRect(gap+c*(cw+gap),gap+r*(ch+gap),cw,ch);})); }
+const GOLD=[232,185,60],GREY=[229,227,218];
+function paintFold(p,lift,pop){ const t=Math.min(1,Math.max(0,p)),s=(lift||0)*.04+(pop||0)*.035;
+  const L=k=>lerp(big4[k],row[k],p);
+  Object.assign(card.style,{left:L('x')+'px',top:L('y')+'px',width:L('w')+'px',height:Math.max(20,L('h'))+'px',transform:`scale(${1+s})`,background:`rgb(${GOLD.map((c,i)=>Math.round(lerp(c,GREY[i],t))).join(',')})`,boxShadow:lift?`0 ${12*lift}px ${24*lift}px rgba(0,0,0,${.18*lift})`:'none'});
+  gc.style.left=L('gx')+'px'; gc.style.top=L('gy')+'px'; const w=Math.max(10,L('gw')),h=Math.max(10,L('gh')); drawGrid(w,h,lerp(2.2,1,t)); gc.style.transform=`scale(${1+s})`; }
+function heroShown(on){ for(const id of['hero1','hero2','play'])$(id).style.display=on?'':'none'; }
+function rowShown(a){ $('rowText').style.opacity=a; $('rowText').style.transform=`translateY(${8*(1-a)}px)`; $('chev').style.opacity=.35*a; }
+$('hero1').style.left=$('hero2').style.left='57px'; $('hero1').style.top='204px'; $('hero2').style.top='222px'; $('play').style.left='179px'; $('play').style.top='206px';
+$('rowText').style.left='80px'; $('rowText').style.top='110px'; $('chev').style.left='232px'; $('chev').style.top='128px';
+function gift(){ heroShown(true); rowShown(0); paintFold(0,0,0);
+  later(1.2,()=>{ // Lift
+    tween(.16,p=>paintFold(0,ease(p),0),()=>{ // Fold
+      heroShown(false);
+      animate({response:.42,damping:.72,onUpdate:v=>paintFold(v,0,0)});
+      later(.24,()=>animate({response:.3,damping:.7,onUpdate:v=>rowShown(Math.min(1,v))}));
+      later(.32,()=>{ tween(.1,p=>paintFold(1,0,p),()=>animate({response:.3,damping:.5,onUpdate:v=>paintFold(1,0,1-v)})); });
+      later(2.4,()=>tween(.22,p=>{card.style.opacity=gc.style.opacity=1-p;rowShown(1-p);},()=>{card.style.opacity=gc.style.opacity=1;gift();}));
+    });
+  });
+}
+gift();
+</script>
+</body>
+</html>
