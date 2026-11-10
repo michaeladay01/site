@@ -28,8 +28,8 @@
 <link rel="preload" as="image" href="media/runnit/carousel.jpg" fetchpriority="high">
 <link rel="preload" as="image" href="media/specter/logo.jpg">
 <link rel="preload" as="image" href="media/bocci/mark.jpg">
-<link rel="stylesheet" href="style.css?v=92">
-<link rel="stylesheet" href="home.css?v=92">
+<link rel="stylesheet" href="style.css?v=94">
+<link rel="stylesheet" href="home.css?v=94">
 <!--
   Home, after the THEO / Studioform / Merrell references.
 
@@ -143,6 +143,44 @@
       el.style.viewTransitionName = '';
     });
   });
+</script>
+<!-- Build the page before it is asked for.
+     Hovering a card is a reliable signal that it is about to be clicked, and
+     "moderate" eagerness acts on exactly that - roughly 200ms of hover, or a
+     pointer going down. The browser then fetches AND RENDERS the project page
+     in the background, so by the time the click lands there is nothing left
+     to fetch, parse or lay out: the navigation activates a document that is
+     already painted.
+
+     That is what removes the stall. The media was never the problem - every
+     card's clip is the same file as the hero it flies into, already in the
+     cache - it was the page itself: fetch, parse, layout, decode, all of it
+     happening in the moment you were trying to watch something move.
+
+     It also makes the morph itself steadier, because the arriving page's
+     snapshot is taken from a document that has finished rendering rather than
+     one mid-flight.
+
+     Chrome and Edge act on this; Safari ignores it and behaves as before, so
+     it is a gain where it is understood and costs nothing where it is not.
+     Restricted to same-origin hrefs as well: the Questrade card points at
+     mouthwash.studio, which cannot be prerendered anyway, and there is no
+     reason to have the browser consider it.
+     Only on hover, so at most one page is ever built ahead. -->
+<script type="speculationrules">
+{
+  "prerender": [
+    {
+      "where": {
+        "and": [
+          { "selector_matches": ".strip .card" },
+          { "href_matches": "/*" }
+        ]
+      },
+      "eagerness": "moderate"
+    }
+  ]
+}
 </script>
 </head>
 <body>
