@@ -2563,7 +2563,7 @@ footer {
    style.css and work.css only, so the same rules in home.css never reached
    them and the role stayed right-aligned at 124px, which is what left its
    second line hanging in the middle of the column. */
-@media (max-width: 560px) {
+@media (max-width: 860px) {
   /* The role goes on a phone, here as well as on the index. On a post it
      was taking two of the four lines above the title - "Motion Designer"
      then "Paris, France" - to say something the page is not about, directly
