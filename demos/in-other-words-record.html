@@ -155,8 +155,18 @@ const byBounce = (d, b) => ({ response: d, damping: 1 - b });
    coming up and going back down. ---------- */
 const RATE = 44100;
 let actx = null;
+/* The page this runs inside shows a speaker control on the frame; it tells us
+   here. Scheduling into a suspended context is harmless - it simply makes no
+   sound - so muting is just not resuming it. */
+let iowMuted = false;   /* not `muted` - two of these demos already use that */
+addEventListener('message', function (e) {
+  if (!e.data || e.data.iow !== 'mute') return;
+  iowMuted = !!e.data.muted;
+  if (!actx) return;
+  if (iowMuted) actx.suspend(); else actx.resume();
+});
 const bufCache = {};
-function audio() { if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } if (actx && actx.state === 'suspended') actx.resume(); return actx; }
+function audio() { if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } if (actx && actx.state === 'suspended' && !iowMuted) actx.resume(); return actx; }
 addEventListener('pointerdown', audio, { capture: true });
 const sine = (f, t) => t < 0 ? 0 : Math.sin(2 * Math.PI * f * t);
 const env = (t, d) => t < 0 ? 0 : Math.exp(-t * d);

@@ -21,9 +21,9 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
       media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"></noscript>
-<link rel="stylesheet" href="style.css?v=91">
-<link rel="stylesheet" href="work.css?v=91">
-<link rel="stylesheet" href="writing.css?v=1">
+<link rel="stylesheet" href="style.css?v=92">
+<link rel="stylesheet" href="work.css?v=92">
+<link rel="stylesheet" href="writing.css?v=2">
 <!-- The frames below are the app's own screens, rebuilt for the web and kept
      in demos/ as standalone pages so their motion runs untouched by this one. -->
 <script>
@@ -42,7 +42,7 @@
 <div class="wrap wrap--work">
 
   <header class="masthead" data-rise="1">
-    <h1><a href="index.html">Michaela&nbsp;Day</a></h1>
+    <p class="wordmark"><a class="home" href="index.html">Michaela&nbsp;Day</a></p>
     <nav class="nav"><a href="explorations.html">Explorations</a></nav>
     <p class="role">Motion Designer<br>Paris, France</p>
   </header>
@@ -82,6 +82,14 @@
           data-src="demos/in-other-words-board.html"
           title="In Other Words: today's crossword, playable"
           loading="lazy"></iframe>
+        <button class="mute" type="button" aria-pressed="false"
+                aria-label="Turn sound off" title="Turn sound off">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path class="cone" d="M4 9.5h3.2L12 5.6v12.8L7.2 14.5H4z"/>
+            <path class="waves" d="M15.4 9.1a4 4 0 0 1 0 5.8M17.9 6.6a7.6 7.6 0 0 1 0 10.8"/>
+            <path class="cross" d="M15.6 9.6l4.8 4.8M20.4 9.6l-4.8 4.8"/>
+          </svg>
+        </button>
         <button class="take" type="button" aria-label="Have a play — take control of the crossword"></button>
         <span class="hint" aria-hidden="true">Have a play</span>
       </span>
@@ -93,6 +101,14 @@
           data-src="demos/in-other-words-record.html"
           title="In Other Words: your record, playable"
           loading="lazy"></iframe>
+        <button class="mute" type="button" aria-pressed="false"
+                aria-label="Turn sound off" title="Turn sound off">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path class="cone" d="M4 9.5h3.2L12 5.6v12.8L7.2 14.5H4z"/>
+            <path class="waves" d="M15.4 9.1a4 4 0 0 1 0 5.8M17.9 6.6a7.6 7.6 0 0 1 0 10.8"/>
+            <path class="cross" d="M15.6 9.6l4.8 4.8M20.4 9.6l-4.8 4.8"/>
+          </svg>
+        </button>
         <button class="take" type="button" aria-label="See how I'm getting on — take control of the record screen"></button>
         <span class="hint" aria-hidden="true">See how I&rsquo;m getting on</span>
       </span>
@@ -124,6 +140,14 @@
           data-src="demos/in-other-words-make.html"
           title="In Other Words: make a crossword, playable"
           loading="lazy"></iframe>
+        <button class="mute" type="button" aria-pressed="false"
+                aria-label="Turn sound off" title="Turn sound off">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path class="cone" d="M4 9.5h3.2L12 5.6v12.8L7.2 14.5H4z"/>
+            <path class="waves" d="M15.4 9.1a4 4 0 0 1 0 5.8M17.9 6.6a7.6 7.6 0 0 1 0 10.8"/>
+            <path class="cross" d="M15.6 9.6l4.8 4.8M20.4 9.6l-4.8 4.8"/>
+          </svg>
+        </button>
         <button class="take" type="button" aria-label="Make one for someone — take control of the maker"></button>
         <span class="hint" aria-hidden="true">Make one for someone</span>
       </span>
@@ -190,5 +214,65 @@
 
 <script src="name.js?v=8"></script>
 <script src="embed.js?v=1"></script>
+<script>
+/* The speaker on each frame.
+ *
+ * The demos run in iframes, so the page cannot reach into them - it tells
+ * them by postMessage and they decide not to resume their audio context.
+ * Scheduling into a suspended context makes no sound, so muting costs them
+ * nothing and nothing has to be torn down.
+ *
+ * The choice is remembered and applied to every sound-making frame at once:
+ * someone who turned the sound off on the first one did not mean "only this
+ * one", and should not have to say it three times. */
+(function () {
+  'use strict';
+
+  var KEY = 'iow-muted';
+  var muted = false;
+  try { muted = localStorage.getItem(KEY) === '1'; } catch (e) {}
+
+  var buttons = [].slice.call(document.querySelectorAll('.embed .mute'));
+  if (!buttons.length) return;
+
+  function frameOf(btn) {
+    var holder = btn.closest ? btn.closest('.holder') : null;
+    return holder ? holder.querySelector('iframe') : null;
+  }
+
+  function tell(frame) {
+    if (!frame || !frame.contentWindow) return;
+    try { frame.contentWindow.postMessage({ iow: 'mute', muted: muted }, '*'); } catch (e) {}
+  }
+
+  function paint() {
+    buttons.forEach(function (btn) {
+      btn.setAttribute('aria-pressed', muted ? 'true' : 'false');
+      var label = muted ? 'Turn sound on' : 'Turn sound off';
+      btn.setAttribute('aria-label', label);
+      btn.setAttribute('title', label);
+      tell(frameOf(btn));
+    });
+  }
+
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      /* Not a click on the frame: pressing the speaker must not also hand
+         the demo the pointer. */
+      e.preventDefault();
+      e.stopPropagation();
+      muted = !muted;
+      try { localStorage.setItem(KEY, muted ? '1' : '0'); } catch (err) {}
+      paint();
+    });
+
+    /* A frame loads late, and lazily; tell it again when it does. */
+    var frame = frameOf(btn);
+    if (frame) frame.addEventListener('load', function () { tell(frame); });
+  });
+
+  paint();
+}());
+</script>
 </body>
 </html>

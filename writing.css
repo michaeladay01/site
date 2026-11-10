@@ -221,3 +221,56 @@
   background: transparent;
 }
 .visit.pending:hover .arrow { border-color: var(--line); color: var(--ink-dim); }
+
+/* Sound, and the way out of it ------------------------------------------
+   Three of these frames make sound once you start playing with them. A
+   reader who does not want that needs somewhere obvious to say so, and the
+   top right of the frame is where a player puts it.
+
+   It sits ABOVE the invisible sheet that catches the first click, so it can
+   be pressed without taking control of the demo - otherwise reaching for the
+   speaker would start the thing you were trying to quieten. */
+.embed .mute {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 180ms var(--ease-out), background 180ms var(--ease-out);
+}
+/* Shown on approach, and always once the frame is live or sound is off, so
+   the state is never hidden from someone who chose it. */
+.embed .holder:hover .mute,
+.embed .holder.is-live .mute,
+.embed .mute:focus-visible,
+.embed .mute[aria-pressed="true"] { opacity: 1; }
+.embed .mute:hover { background: rgba(0, 0, 0, 0.7); }
+
+.embed .mute svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.embed .mute .cone { fill: currentColor; stroke-width: 1.2; }
+/* One icon, two states: the waves and the cross trade places. */
+.embed .mute .cross { opacity: 0; }
+.embed .mute[aria-pressed="true"] .waves { opacity: 0; }
+.embed .mute[aria-pressed="true"] .cross { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .embed .mute { transition: none; }
+}
